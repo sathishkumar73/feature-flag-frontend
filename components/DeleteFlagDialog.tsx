@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DeleteFlagDialogProps } from "./types/flag-list-props";
+import { DeleteFlagDialogProps } from "./types/flag-list";
 import { deleteFlag } from "@/services/flagService";
 import { toast } from "sonner";
 

@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FeatureFlag } from "@/components/types/flag";
-import { FeatureFlagsListProps } from "@/components/types/flag-list-props";
+import { FeatureFlagsListProps } from "@/components/types/flag-list";
 import { Button } from "../ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { CheckCircleIcon, XCircleIcon } from "lucide-react";

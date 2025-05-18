@@ -5,7 +5,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { FeatureFlagsFiltersProps } from "../types/flag-list-props";
+import { FeatureFlagsFiltersProps } from "../types/flag-list";
 
 const FeatureFlagsFilters: React.FC<FeatureFlagsFiltersProps> = ({
   environment,
