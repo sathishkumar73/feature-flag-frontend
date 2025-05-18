@@ -6,3 +6,10 @@ export interface FeatureFlagsListProps {
   onEdit: (flag: FeatureFlag) => void;
   onDelete: (flag: FeatureFlag) => void;
 }
+
+export interface DeleteFlagDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  flagToDelete: FeatureFlag | null;
+  onFlagDeleted?: (flag: FeatureFlag) => void;
+}

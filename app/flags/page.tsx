@@ -7,6 +7,7 @@ import FeatureFlagsFilters from "@/components/FeatureFlags/FeatureFlagsFilters";
 import FeatureFlagsList from "@/components/FeatureFlags/FeatureFlagsList";
 import FeatureFlagsPagination from "@/components/FeatureFlags/FeatureFlagsPagination";
 import EditFlagDialog from "@/components/EditFlagDialog";
+import DeleteFlagDialog from "@/components/DeleteFlagDialog";
 
 export default function FlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -19,6 +20,8 @@ export default function FlagsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [flagToDelete, setFlagToDelete] = useState<FeatureFlag | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -31,6 +34,11 @@ export default function FlagsPage() {
   const handleEditClick = (flag: FeatureFlag) => {
     setEditingFlag(flag);
     setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (flag: FeatureFlag) => {
+    setFlagToDelete(flag);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleFlagCreated = (newFlag: FeatureFlag) => {
@@ -52,8 +60,10 @@ export default function FlagsPage() {
     setIsEditDialogOpen(false);
   };
 
-  const handleDeleteFlag = (flag: FeatureFlag) => {
-    console.log(`Delete flag with ID: ${flag}`);
+  const handleFlagDeleted = (deletedFlag: FeatureFlag) => {
+    setFlags((prevFlags) => prevFlags.filter((flag) => flag.id !== deletedFlag.id));
+    setFlagToDelete(null);
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -77,7 +87,7 @@ export default function FlagsPage() {
         loading={loading}
         flags={flags}
         onEdit={handleEditClick}
-        onDelete={handleDeleteFlag}
+        onDelete={handleDeleteClick}
       />
 
       {flags.length > 0 && !loading && totalPages > 0 && (
@@ -94,6 +104,15 @@ export default function FlagsPage() {
           onOpenChange={setIsEditDialogOpen}
           onFlagUpdated={handleFlagUpdated}
           initialFlag={editingFlag}
+        />
+      )}
+
+      {flagToDelete && (
+        <DeleteFlagDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          flagToDelete={flagToDelete}
+          onFlagDeleted={handleFlagDeleted}
         />
       )}
     </div>
