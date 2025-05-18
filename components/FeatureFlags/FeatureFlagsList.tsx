@@ -22,7 +22,7 @@ import { FeatureFlag } from "@/components/types/flag";
 import { FeatureFlagsListProps } from "@/components/types/flag-list-props";
 import { Button } from "../ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
-import { CheckCircleIcon, XCircleIcon } from "lucide-react"; // Import icons for boolean status
+import { CheckCircleIcon, XCircleIcon } from "lucide-react";
 
 const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   loading,
@@ -114,7 +114,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   // Define skeleton columns (headers remain the same)
   const skeletonColumns: ColumnDef<FeatureFlag>[] = columns.map((column) => ({
     ...column,
-    cell: () => <Skeleton className="h-6 w-full" />, // Increased skeleton height
+    cell: () => <Skeleton className="h-6 w-full" />,
   }));
   const columnsToUse = loading ? skeletonColumns : columns;
 
@@ -152,7 +152,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="h-12" // Increased row height
+                className="h-12"
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="py-3">
@@ -167,7 +167,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="h-24 text-center py-3" // Added padding
+                className="h-24 text-center py-3"
               >
                 No Feature Flags Found
               </TableCell>
