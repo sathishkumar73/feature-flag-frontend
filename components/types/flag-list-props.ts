@@ -13,3 +13,10 @@ export interface DeleteFlagDialogProps {
   flagToDelete: FeatureFlag | null;
   onFlagDeleted?: (flag: FeatureFlag) => void;
 }
+
+export interface FeatureFlagsFiltersProps {
+  environment: string;
+  onEnvironmentChange: (value: string) => void;
+  sortOrder: string;
+  onSortOrderChange: (value: string) => void;
+}

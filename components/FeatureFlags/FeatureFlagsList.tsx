@@ -179,4 +179,24 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   );
 };
 
-export default FeatureFlagsList;
+const areEqual = (
+  prevProps: FeatureFlagsListProps,
+  nextProps: FeatureFlagsListProps
+) => {
+  // If loading state changes but flags are the same reference, don't re-render
+  if (
+    prevProps.loading !== nextProps.loading &&
+    prevProps.flags === nextProps.flags
+  ) {
+    return true;
+  }
+  // Otherwise, perform a shallow comparison of all props
+  return (
+    prevProps.loading === nextProps.loading &&
+    prevProps.flags === nextProps.flags &&
+    prevProps.onEdit === nextProps.onEdit &&
+    prevProps.onDelete === nextProps.onDelete
+  );
+};
+
+export default React.memo(FeatureFlagsList, areEqual);

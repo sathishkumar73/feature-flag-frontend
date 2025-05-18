@@ -5,13 +5,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
-interface FeatureFlagsFiltersProps {
-  environment: string;
-  onEnvironmentChange: (value: string) => void;
-  sortOrder: string;
-  onSortOrderChange: (value: string) => void;
-}
+import { FeatureFlagsFiltersProps } from "../types/flag-list-props";
 
 const FeatureFlagsFilters: React.FC<FeatureFlagsFiltersProps> = ({
   environment,

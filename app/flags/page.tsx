@@ -26,7 +26,10 @@ export default function FlagsPage() {
   useEffect(() => {
     setLoading(true);
     fetchFlags(page, limit, environment, sortOrder)
-      .then((data: FeatureFlag[]) => setFlags(data))
+      .then((data: any) => {
+        setFlags(data.data);
+        setTotalPages(data.meta.totalPages);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [page, limit, environment, sortOrder]);
@@ -35,6 +38,16 @@ export default function FlagsPage() {
     setEditingFlag(flag);
     setIsEditDialogOpen(true);
   };
+
+  const handleEnvironmentChange = (environmentValue: string) => {
+    setEnvironment(environmentValue);
+    setPage(1);
+  }
+
+  const handleSortChange = (sortOrderValue: string) => {
+    setSortOrder(sortOrderValue);
+    setPage(1);
+  }
 
   const handleDeleteClick = (flag: FeatureFlag) => {
     setFlagToDelete(flag);
@@ -72,9 +85,9 @@ export default function FlagsPage() {
       <div className="flex justify-between">
         <FeatureFlagsFilters
           environment={environment}
-          onEnvironmentChange={setEnvironment}
+          onEnvironmentChange={handleEnvironmentChange}
           sortOrder={sortOrder}
-          onSortOrderChange={setSortOrder}
+          onSortOrderChange={handleSortChange}
         />
         <CreateFlagDialog
           open={isCreateDialogOpen}
