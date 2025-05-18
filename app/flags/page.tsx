@@ -22,6 +22,7 @@ export default function FlagsPage() {
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [flagToDelete, setFlagToDelete] = useState<FeatureFlag | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -32,7 +33,7 @@ export default function FlagsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [page, limit, environment, sortOrder]);
+  }, [page, limit, environment, sortOrder, refreshTrigger]);
 
   const handleEditClick = (flag: FeatureFlag) => {
     setEditingFlag(flag);
@@ -77,6 +78,7 @@ export default function FlagsPage() {
     setFlags((prevFlags) => prevFlags.filter((flag) => flag.id !== deletedFlag.id));
     setFlagToDelete(null);
     setIsDeleteDialogOpen(false);
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
