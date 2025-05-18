@@ -13,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { createFlag } from "@/services/flagService";
 
 interface CreateFlagDialogProps {
-  onFlagCreated: () => void;
+  onFlagCreated: (response: any) => void;
   className?: string;
 }
 
@@ -27,33 +28,27 @@ export default function CreateFlagDialog({
   const [description, setDescription] = useState("");
   const [environment, setEnvironment] = useState("production");
   const [enabled, setEnabled] = useState(false);
+  const [isDialogOpen, setDialogOpen] = useState(false);
 
   const handleCreateFlag = async () => {
     try {
-      await fetch("/flags", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          environment,
-          enabled,
-          rolloutPercentage: 0, // Default rollout
-        }),
+      const response = await createFlag({
+        name,
+        description,
+        environment,
+        enabled,
       });
-      toast.success('Feature flag created successfully.')
-      onFlagCreated(); // Refresh flag list after creation
+      toast.success("Feature flag created successfully.");
+      setDialogOpen(false);
+      onFlagCreated(response);
     } catch (error) {
       console.error("Error creating flag:", error);
-      toast.error('Failed to create feature flag.')
+      toast.error("Failed to create feature flag.");
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button className={className}>Create Feature Flag</Button>
       </DialogTrigger>

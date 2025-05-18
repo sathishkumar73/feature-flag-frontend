@@ -17,17 +17,10 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
-interface FeatureFlag {
-  id: string;
-  name: string;
-  description?: string;
-  enabled: boolean;
-  environment: string;
-}
+import { FeatureFlag } from "@/components/types/flag";
 
 export default function FlagsPage() {
-  const [flags, setFlags] = useState<[]>([]);
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -61,8 +54,20 @@ export default function FlagsPage() {
         <Select
           onValueChange={(value) => setEnvironment(value)}
           defaultValue="all"
+          value={environment}
         >
-          <SelectTrigger className="w-[180px]">Environment</SelectTrigger>
+          <SelectTrigger className="w-[180px]">
+            {environment === "all"
+              ? "All"
+              : environment === "production"
+              ? "Production"
+              : environment === "staging"
+              ? "Staging"
+              : environment === "development"
+              ? "Development"
+              : "Select Environment"}{" "}
+            {/* Fallback label */}
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="production">Production</SelectItem>
@@ -75,8 +80,19 @@ export default function FlagsPage() {
         <Select
           onValueChange={(value) => setSortOrder(value)}
           defaultValue="createdAt_desc"
+          value={sortOrder}
         >
-          <SelectTrigger className="w-[180px]">Sort By</SelectTrigger>
+          <SelectTrigger className="w-[180px]">
+            {sortOrder === "createdAt_desc"
+              ? "Newest First"
+              : sortOrder === "createdAt_asc"
+              ? "Oldest First"
+              : sortOrder === "name_asc"
+              ? "Name (A-Z)"
+              : sortOrder === "name_desc"
+              ? "Name (Z-A)"
+              : "Select an option"}{" "}
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="createdAt_desc">Newest First</SelectItem>
             <SelectItem value="createdAt_asc">Oldest First</SelectItem>
@@ -87,8 +103,8 @@ export default function FlagsPage() {
       </div>
       <CreateFlagDialog
         className="mb-4"
-        onFlagCreated={() => {
-          fetchFlags().then(setFlags);
+        onFlagCreated={(response: FeatureFlag) => {
+          setFlags([response, ...flags])
         }}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
