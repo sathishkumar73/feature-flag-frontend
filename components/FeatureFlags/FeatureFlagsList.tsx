@@ -90,7 +90,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onEdit(row.original.id)}
+            onClick={() => onEdit(row.original)}
             className="h-8 w-8"
           >
             <PencilIcon className="h-4 w-4" />
@@ -99,7 +99,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(row.original.id)}
+            onClick={() => onDelete(row.original)}
             className="h-8 w-8"
           >
             <TrashIcon className="h-4 w-4" />

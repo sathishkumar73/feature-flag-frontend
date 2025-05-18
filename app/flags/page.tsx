@@ -6,6 +6,7 @@ import { FeatureFlag } from "@/components/types/flag";
 import FeatureFlagsFilters from "@/components/FeatureFlags/FeatureFlagsFilters";
 import FeatureFlagsList from "@/components/FeatureFlags/FeatureFlagsList";
 import FeatureFlagsPagination from "@/components/FeatureFlags/FeatureFlagsPagination";
+import EditFlagDialog from "@/components/EditFlagDialog";
 
 export default function FlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -15,6 +16,9 @@ export default function FlagsPage() {
   const [loading, setLoading] = useState(true);
   const [environment, setEnvironment] = useState("all");
   const [sortOrder, setSortOrder] = useState("createdAt_desc");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -24,20 +28,32 @@ export default function FlagsPage() {
       .finally(() => setLoading(false));
   }, [page, limit, environment, sortOrder]);
 
+  const handleEditClick = (flag: FeatureFlag) => {
+    setEditingFlag(flag);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleFlagCreated = (newFlag: FeatureFlag) => {
+    setFlags([newFlag, ...flags]);
+    setIsCreateDialogOpen(false);
+  };
+
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
     }
   };
 
-  const handleEditFlag = (flagId: string) => {
-    console.log(`Edit flag with ID: ${flagId}`);
-    // Implement your edit logic here (e.g., open a modal)
+  const handleFlagUpdated = (updatedFlag: FeatureFlag) => {
+    setFlags((prevFlags) =>
+      prevFlags.map((flag) => (flag.id === updatedFlag.id ? updatedFlag : flag))
+    );
+    setEditingFlag(null);
+    setIsEditDialogOpen(false);
   };
 
-  const handleDeleteFlag = (flagId: string) => {
-    console.log(`Delete flag with ID: ${flagId}`);
-    // Implement your delete logic here (e.g., show a confirmation dialog and then call an API)
+  const handleDeleteFlag = (flag: FeatureFlag) => {
+    console.log(`Delete flag with ID: ${flag}`);
   };
 
   return (
@@ -51,17 +67,16 @@ export default function FlagsPage() {
           onSortOrderChange={setSortOrder}
         />
         <CreateFlagDialog
-          className="mb-4"
-          onFlagCreated={(response: FeatureFlag) => {
-            setFlags([response, ...flags]);
-          }}
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onFlagCreated={handleFlagCreated}
         />
       </div>
 
       <FeatureFlagsList
         loading={loading}
         flags={flags}
-        onEdit={handleEditFlag}
+        onEdit={handleEditClick}
         onDelete={handleDeleteFlag}
       />
 
@@ -70,6 +85,15 @@ export default function FlagsPage() {
           page={page}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+        />
+      )}
+
+      {editingFlag && (
+        <EditFlagDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onFlagUpdated={handleFlagUpdated}
+          initialFlag={editingFlag}
         />
       )}
     </div>

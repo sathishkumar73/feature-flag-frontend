@@ -54,3 +54,49 @@ export async function createFlag(data: {
 
   return response.json();
 }
+
+export async function updateFlag(
+  id: string,
+  data: {
+    name: string;
+    description: string;
+    environment: string;
+    enabled: boolean;
+    rolloutPercentage?: number;
+  }
+) {
+  const response = await fetch(`${API_BASE_URL}/flags/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY || "",
+    },
+    body: JSON.stringify({
+      ...data,
+      rolloutPercentage: data.rolloutPercentage ?? 0,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update flag: ${errorText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteFlag(id: string) {
+  const response = await fetch(`${API_BASE_URL}/flags/${id}`, {
+    method: "DELETE",
+    headers: {
+      "x-api-key": API_KEY || "",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to delete flag: ${errorText}`);
+  }
+
+  return { success: true };
+}

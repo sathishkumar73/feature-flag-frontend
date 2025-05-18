@@ -1,8 +1,8 @@
+// components/EditFlagDialog.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogFooter,
@@ -12,52 +12,56 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { createFlag } from "@/services/flagService";
+import { updateFlag } from "@/services/flagService";
 import { FeatureFlag } from "@/components/types/flag";
 
-interface CreateFlagDialogProps {
+interface EditFlagDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onFlagCreated?: (response: FeatureFlag) => void;
-  className?: string;
+  onFlagUpdated?: (response: FeatureFlag) => void;
+  initialFlag: FeatureFlag; // Make this required for the edit dialog
 }
 
-export default function CreateFlagDialog({
+export default function EditFlagDialog({
   open,
   onOpenChange,
-  onFlagCreated,
-  className,
-}: CreateFlagDialogProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [environment, setEnvironment] = useState("production");
-  const [enabled, setEnabled] = useState(false);
+  onFlagUpdated,
+  initialFlag,
+}: EditFlagDialogProps) {
+  const [name, setName] = useState(initialFlag.name);
+  const [description, setDescription] = useState(initialFlag.description || "");
+  const [environment, setEnvironment] = useState(initialFlag.environment || "production");
+  const [enabled, setEnabled] = useState(initialFlag.enabled || false);
 
-  const handleCreateFlag = async () => {
+  useEffect(() => {
+    setName(initialFlag.name);
+    setDescription(initialFlag.description || "");
+    setEnvironment(initialFlag.environment || "production");
+    setEnabled(initialFlag.enabled || false);
+  }, [initialFlag]);
+
+  const handleSaveFlag = async () => {
     try {
-      const response = await createFlag({
+      const response = await updateFlag(initialFlag.id, {
         name,
         description,
         environment,
         enabled,
       });
-      toast.success("Feature flag created successfully.");
+      toast.success("Feature flag updated successfully.");
       onOpenChange(false);
-      onFlagCreated?.(response);
+      onFlagUpdated?.(response);
     } catch (error) {
-      console.error("Error creating flag:", error);
-      toast.error("Failed to create feature flag.");
+      console.error("Error updating flag:", error);
+      toast.error("Failed to update feature flag.");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className={className}>Create Feature Flag</Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Feature Flag</DialogTitle>
+          <DialogTitle>Edit Feature Flag</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <Input
@@ -85,7 +89,7 @@ export default function CreateFlagDialog({
           </div>
         </div>
         <DialogFooter className="mt-4">
-          <Button onClick={handleCreateFlag}>Create</Button>
+          <Button onClick={handleSaveFlag}>Save Changes</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
