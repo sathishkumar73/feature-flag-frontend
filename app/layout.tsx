@@ -41,8 +41,8 @@ export default function RootLayout({
                 </BreadcrumbList>
               </Breadcrumb>
             </header>
-            <div className="flex flex-1 flex-col gap-4 p-6">
-              <main className="flex-1 p-6 bg-white min-h-screen">{children}</main>
+            <div className="flex flex-1 flex-col gap-4">
+              <main className="flex-1 bg-white min-h-screen">{children}</main>
             </div>
           </SidebarInset>
         </SidebarProvider>

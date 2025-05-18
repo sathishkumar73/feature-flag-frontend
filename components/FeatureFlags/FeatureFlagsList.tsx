@@ -126,7 +126,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   });
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border max-h-[500px] overflow-y-scroll">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
