@@ -22,6 +22,7 @@ import { FeatureFlag } from "@/components/types/flag";
 import { FeatureFlagsListProps } from "@/components/types/flag-list-props";
 import { Button } from "../ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
+import { CheckCircleIcon, XCircleIcon } from "lucide-react"; // Import icons for boolean status
 
 const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   loading,
@@ -55,7 +56,18 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
     {
       accessorKey: "enabled",
       header: "Enabled",
-      cell: ({ row }) => (row.getValue("enabled") ? "✅" : "❌"),
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          {row.getValue("enabled") ? (
+            <CheckCircleIcon className="h-4 w-4 text-green-500" />
+          ) : (
+            <XCircleIcon className="h-4 w-4 text-red-500" />
+          )}
+          <span className="ml-2 sr-only">
+            {row.getValue("enabled") ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+      ),
     },
     {
       accessorKey: "environment",
@@ -77,16 +89,18 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
         <div className="flex gap-2">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => onEdit(row.original.id)}
+            className="h-8 w-8"
           >
             <PencilIcon className="h-4 w-4" />
             <span className="sr-only">Edit</span>
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => onDelete(row.original.id)}
+            className="h-8 w-8"
           >
             <TrashIcon className="h-4 w-4" />
             <span className="sr-only">Delete</span>
@@ -100,7 +114,7 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   // Define skeleton columns (headers remain the same)
   const skeletonColumns: ColumnDef<FeatureFlag>[] = columns.map((column) => ({
     ...column,
-    cell: () => <Skeleton className="h-4 w-full" />,
+    cell: () => <Skeleton className="h-6 w-full" />, // Increased skeleton height
   }));
   const columnsToUse = loading ? skeletonColumns : columns;
 
@@ -118,7 +132,9 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+                <TableHead key={header.id} className="py-2">
+                  {" "}
+                  {/* Added padding */}
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -136,9 +152,12 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
+                className="h-12" // Increased row height
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell key={cell.id} className="py-3">
+                    {" "}
+                    {/* Added padding */}
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -146,7 +165,10 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
             ))
           ) : !loading ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center py-3" // Added padding
+              >
                 No Feature Flags Found
               </TableCell>
             </TableRow>
