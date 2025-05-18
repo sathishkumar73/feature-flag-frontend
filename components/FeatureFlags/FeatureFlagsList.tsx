@@ -19,47 +19,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FeatureFlag } from "@/components/types/flag";
-import { FeatureFlagsListProps } from "../types/flag-list-props";
-
-const columns: ColumnDef<FeatureFlag>[] = [
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
-  {
-    accessorKey: "enabled",
-    header: "Enabled",
-    cell: ({ row }) => (row.getValue("enabled") ? "✅" : "❌"),
-  },
-  {
-    accessorKey: "environment",
-    header: "Environment",
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }) => (
-      <div className="flex gap-2">
-        {row.original.id} {/* Placeholder for actions */}
-      </div>
-    ),
-    enableSorting: false,
-  },
-];
-
-// Define skeleton columns (headers remain the same)
-const skeletonColumns: ColumnDef<FeatureFlag>[] = columns.map((column) => ({
-  ...column,
-  cell: () => <Skeleton className="h-4 w-full" />,
-}));
+import { FeatureFlagsListProps } from "@/components/types/flag-list-props";
+import { Button } from "../ui/button";
+import { PencilIcon, TrashIcon } from "lucide-react";
 
 const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
   loading,
   flags,
+  onEdit,
+  onDelete,
 }) => {
   const data: FeatureFlag[] = loading
     ? Array.from({ length: 10 }, (_, index) => ({
@@ -74,6 +42,66 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
         version: 1,
       }))
     : flags;
+
+  const columns: ColumnDef<FeatureFlag>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+    },
+    {
+      accessorKey: "enabled",
+      header: "Enabled",
+      cell: ({ row }) => (row.getValue("enabled") ? "✅" : "❌"),
+    },
+    {
+      accessorKey: "environment",
+      header: "Environment",
+    },
+    {
+      accessorKey: "rolloutPercentage",
+      header: "Rollout %",
+      cell: ({ row }) => row.getValue("rolloutPercentage") + "%",
+    },
+    {
+      accessorKey: "version",
+      header: "Version",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(row.original.id)}
+          >
+            <PencilIcon className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(row.original.id)}
+          >
+            <TrashIcon className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
+          </Button>
+        </div>
+      ),
+      enableSorting: false,
+    },
+  ];
+
+  // Define skeleton columns (headers remain the same)
+  const skeletonColumns: ColumnDef<FeatureFlag>[] = columns.map((column) => ({
+    ...column,
+    cell: () => <Skeleton className="h-4 w-full" />,
+  }));
   const columnsToUse = loading ? skeletonColumns : columns;
 
   const table = useReactTable({

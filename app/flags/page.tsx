@@ -30,6 +30,16 @@ export default function FlagsPage() {
     }
   };
 
+  const handleEditFlag = (flagId: string) => {
+    console.log(`Edit flag with ID: ${flagId}`);
+    // Implement your edit logic here (e.g., open a modal)
+  };
+
+  const handleDeleteFlag = (flagId: string) => {
+    console.log(`Delete flag with ID: ${flagId}`);
+    // Implement your delete logic here (e.g., show a confirmation dialog and then call an API)
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Feature Flags</h1>
@@ -48,10 +58,19 @@ export default function FlagsPage() {
         />
       </div>
 
-      <FeatureFlagsList loading={loading} flags={flags} />
+      <FeatureFlagsList
+        loading={loading}
+        flags={flags}
+        onEdit={handleEditFlag}
+        onDelete={handleDeleteFlag}
+      />
 
-      {flags.length > 0 && !loading && totalPages > 1 && (
-        <FeatureFlagsPagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+      {flags.length > 0 && !loading && totalPages > 0 && (
+        <FeatureFlagsPagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );
