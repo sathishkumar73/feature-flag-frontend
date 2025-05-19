@@ -8,6 +8,7 @@ import FeatureFlagsList from "@/components/FeatureFlags/FeatureFlagsList";
 import FeatureFlagsPagination from "@/components/FeatureFlags/FeatureFlagsPagination";
 import EditFlagDialog from "@/components/EditFlagDialog";
 import DeleteFlagDialog from "@/components/DeleteFlagDialog";
+import { toast } from "sonner";
 
 export default function FlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -15,6 +16,7 @@ export default function FlagsPage() {
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [environment, setEnvironment] = useState("all");
   const [sortOrder, setSortOrder] = useState("createdAt_desc");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -26,12 +28,17 @@ export default function FlagsPage() {
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     fetchFlags(page, limit, environment, sortOrder)
       .then((data: any) => {
         setFlags(data.data);
         setTotalPages(data.meta.totalPages);
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load feature flags. If the issue persists, please contact support.");
+        toast.error("Failed to load feature flags");
+      })
       .finally(() => setLoading(false));
   }, [page, limit, environment, sortOrder, refreshTrigger]);
 
@@ -81,6 +88,11 @@ export default function FlagsPage() {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleRetry = () => {
+    setError(null);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Feature Flags</h1>
@@ -98,19 +110,33 @@ export default function FlagsPage() {
         />
       </div>
 
-      <FeatureFlagsList
-        loading={loading}
-        flags={flags}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClick}
-      />
+      {error ? (
+        <div className="p-4 text-red-500 bg-red-50 border border-red-200 rounded-md">
+          <p>{error}</p>
+          <button 
+            onClick={handleRetry}
+            className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        <>
+          <FeatureFlagsList
+            loading={loading}
+            flags={flags}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+          />
 
-      {flags.length > 0 && !loading && totalPages > 0 && (
-        <FeatureFlagsPagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+          {flags.length > 0 && !loading && totalPages > 0 && (
+            <FeatureFlagsPagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
       )}
 
       {editingFlag && (
