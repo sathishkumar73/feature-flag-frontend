@@ -6,6 +6,6 @@ export interface FeatureFlag {
   environment: string;
   createdAt?: Date;
   updatedAt?: Date;
-  rolloutPercentage: Number;
+  rolloutPercentage: number;
   version: number
 }

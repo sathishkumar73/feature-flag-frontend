@@ -44,7 +44,7 @@ export default function DeleteFlagDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. Deleting "{flagToDelete?.name}" will
+            This action cannot be undone. Deleting &quot;{flagToDelete?.name}&quot; will
             permanently remove this feature flag.
           </AlertDialogDescription>
         </AlertDialogHeader>
