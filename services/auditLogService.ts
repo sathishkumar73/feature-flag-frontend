@@ -5,22 +5,23 @@ export async function fetchAuditLogs(flagId?: string, page: number = 1, limit: n
   const queryParams = new URLSearchParams({
     page: `${page}`,
     limit: `${limit}`,
+    ...(flagId && { flagId }),
   });
-  
-  if (flagId) {
-    queryParams.append("flagId", flagId);
-  }
 
-  const url = `${API_BASE_URL}/audit-logs${
-    queryParams.toString() ? `?${queryParams.toString()}` : ""
-  }`;
-
-  const response = await fetch(url, {
-    headers: { "x-api-key": API_KEY || "" },
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/audit-logs?${queryParams.toString()}`,
+    {
+      method: "GET",
+      headers: { 
+        "x-api-key": API_KEY || "",
+        "Content-Type": "application/json"
+      },
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch audit logs: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch audit logs: ${errorText}`);
   }
 
   return response.json();
