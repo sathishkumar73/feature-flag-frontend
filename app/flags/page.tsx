@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export default function FlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function FlagsPage() {
     setLoading(true);
     setError(null);
     fetchFlags(page, limit, environment, sortOrder)
-      .then((data: any) => {
+      .then((data: { data: FeatureFlag[]; meta: { totalPages: number } }) => {
         setFlags(data.data);
         setTotalPages(data.meta.totalPages);
       })
