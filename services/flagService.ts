@@ -1,6 +1,11 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
+const defaultHeaders = {
+  "x-api-key": API_KEY || "",
+  "Content-Type": "application/json"
+};
+
 export async function fetchFlags(
   page = 1,
   limit = 10,
@@ -20,11 +25,15 @@ export async function fetchFlags(
   const response = await fetch(
     `${API_BASE_URL}/flags?${queryParams.toString()}`,
     {
-      headers: { "x-api-key": API_KEY || "" },
+      method: "GET",
+      headers: defaultHeaders,
     }
   );
 
-  if (!response.ok) throw new Error("Failed to fetch flags");
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch flags: ${errorText}`);
+  }
   return response.json();
 }
 
@@ -37,13 +46,10 @@ export async function createFlag(data: {
 }) {
   const response = await fetch(`${API_BASE_URL}/flags`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY || "",
-    },
+    headers: defaultHeaders,
     body: JSON.stringify({
       ...data,
-      rolloutPercentage: data.rolloutPercentage ?? 0, // Default to 0 if not provided
+      rolloutPercentage: data.rolloutPercentage ?? 0,
     }),
   });
 
@@ -67,10 +73,7 @@ export async function updateFlag(
 ) {
   const response = await fetch(`${API_BASE_URL}/flags/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY || "",
-    },
+    headers: defaultHeaders,
     body: JSON.stringify({
       ...data,
       rolloutPercentage: data.rolloutPercentage ?? 0,
@@ -88,9 +91,7 @@ export async function updateFlag(
 export async function deleteFlag(id: string) {
   const response = await fetch(`${API_BASE_URL}/flags/${id}`, {
     method: "DELETE",
-    headers: {
-      "x-api-key": API_KEY || "",
-    },
+    headers: defaultHeaders,
   });
 
   if (!response.ok) {
