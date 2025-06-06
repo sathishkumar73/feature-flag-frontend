@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/Sidebar";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -13,11 +16,25 @@ import {
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // Check if current route starts with /auth to hide sidebar and breadcrumb
+  const isAuthRoute = pathname?.startsWith("/auth");
+
+  if (isAuthRoute) {
+    // For auth routes, just render children without sidebar/breadcrumb
+    return (
+      <html lang="en">
+        <body>
+          {children}
+          <Toaster />
+        </body>
+      </html>
+    );
+  }
+
+  // For all other routes, show sidebar and breadcrumb
   return (
     <html lang="en">
       <body className="flex">
@@ -34,9 +51,7 @@ export default function RootLayout({
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>
-                      Feature Flags
-                    </BreadcrumbPage>
+                    <BreadcrumbPage>Feature Flags</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
@@ -46,7 +61,7 @@ export default function RootLayout({
             </div>
           </SidebarInset>
         </SidebarProvider>
-        <Toaster/>
+        <Toaster />
       </body>
     </html>
   );
