@@ -1,5 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
+import { BaseService } from "./baseService";
 
 interface SignupPayload {
   email: string;
@@ -11,44 +10,16 @@ interface LoginPayload {
   password: string;
 }
 
-class AuthService {
-  static async signup(payload: SignupPayload) {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-      method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Signup failed: ${errorText}`);
-    }
-
-    return response.json();
+class AuthService extends BaseService {
+  async signup(payload: SignupPayload) {
+    return this.post("/auth/signup", payload);
   }
 
-  static async login(payload: LoginPayload) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Login failed: ${errorText}`);
-    }
-
-    return response.json();
+  async login(payload: LoginPayload) {
+    return this.post("/api/auth/login", payload);
   }
 
-  // Add more auth-related methods here, e.g., logout, resendVerification, etc.
+  // Add more auth-related methods here if needed
 }
 
-export default AuthService;
+export default new AuthService();

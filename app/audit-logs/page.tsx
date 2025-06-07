@@ -3,7 +3,7 @@ import AuditLogsTable from "@/components/AuditLogsTable";
 import FeatureFlagsPagination from "@/components/FeatureFlags/FeatureFlagsPagination";
 import React, { useState, useEffect } from "react";
 import { AuditLog } from "@/components/types/audit-log";
-import { fetchAuditLogs } from "@/services/auditLogService";
+import auditLogService from "@/services/auditLogService";
 import { toast } from "sonner";
 
 const AuditLogsPage = () => {
@@ -17,7 +17,7 @@ const AuditLogsPage = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchAuditLogs(flagIdFilter, page)
+    auditLogService.fetchAuditLogs(flagIdFilter, page)
       .then((data) => {
         setAuditLogs(data.data);
         setTotalPages(data.meta.totalPages);

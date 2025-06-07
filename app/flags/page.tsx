@@ -1,7 +1,7 @@
 "use client";
 import CreateFlagDialog from "@/components/CreateFlagDialog";
 import { useEffect, useState } from "react";
-import { fetchFlags } from "@/services/flagService";
+import flagService from "@/services/flagService";
 import { FeatureFlag } from "@/components/types/flag";
 import FeatureFlagsFilters from "@/components/FeatureFlags/FeatureFlagsFilters";
 import FeatureFlagsList from "@/components/FeatureFlags/FeatureFlagsList";
@@ -29,7 +29,7 @@ export default function FlagsPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchFlags(page, limit, environment, sortOrder)
+    flagService.fetchFlags(page, limit, environment, sortOrder)
       .then((data: { data: FeatureFlag[]; meta: { totalPages: number } }) => {
         setFlags(data.data);
         setTotalPages(data.meta.totalPages);
