@@ -30,7 +30,6 @@ const OAuthButtons: React.FC = () => {
     });
 
     if (error) {
-      console.error('GitHub OAuth sign-in error:', error.message);
       setErrorMessage(`GitHub sign-in failed: ${error.message}`);
     }
   };
