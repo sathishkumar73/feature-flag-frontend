@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/components/auth/Authlayout';
-import OAuthButtons from '@/components/auth/OAuthButtons';
+import React, { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import AuthLayout from "@/components/auth/Authlayout";
+import OAuthButtons from "@/components/auth/OAuthButtons";
+import AuthService from "@/services/authService";
 
 interface SignupForm {
   email: string;
@@ -28,9 +29,9 @@ interface FormErrors {
 const Signup: React.FC = () => {
   // Form state management
   const [formData, setFormData] = useState<SignupForm>({
-    email: '',
-    password: '',
-    confirmPassword: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -41,27 +42,31 @@ const Signup: React.FC = () => {
    */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
     // Clear error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: undefined,
       }));
     }
 
     // Real-time password confirmation validation
-    if (name === 'confirmPassword' && formData.password && value !== formData.password) {
-      setErrors(prev => ({
+    if (
+      name === "confirmPassword" &&
+      formData.password &&
+      value !== formData.password
+    ) {
+      setErrors((prev) => ({
         ...prev,
-        confirmPassword: 'Passwords do not match',
+        confirmPassword: "Passwords do not match",
       }));
-    } else if (name === 'confirmPassword' && value === formData.password) {
-      setErrors(prev => ({
+    } else if (name === "confirmPassword" && value === formData.password) {
+      setErrors((prev) => ({
         ...prev,
         confirmPassword: undefined,
       }));
@@ -76,25 +81,26 @@ const Signup: React.FC = () => {
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = "Password must be at least 8 characters long";
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+      newErrors.password =
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number";
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
@@ -106,29 +112,21 @@ const Signup: React.FC = () => {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setIsLoading(true);
-    
+    setErrors({});
+
     try {
-      // TODO: Implement actual registration logic here
-      console.log('Signup attempt with:', {
+      const data = await AuthService.signup({
         email: formData.email,
         password: formData.password,
       });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Handle successful registration (redirect, show confirmation, etc.)
-      console.log('Signup successful');
-      
-    } catch (error) {
-      console.error('Signup error:', error);
-      setErrors({ general: 'Something went wrong. Please try again.' });
+
+      alert("Signup successful! Please check your email for verification.");
+    } catch (error: any) {
+      setErrors({ general: error.message || "Signup failed" });
     } finally {
       setIsLoading(false);
     }
@@ -162,8 +160,12 @@ const Signup: React.FC = () => {
             value={formData.email}
             onChange={handleInputChange}
             placeholder="Enter your email"
-            className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
-            aria-describedby={errors.email ? 'email-error' : undefined}
+            className={
+              errors.email
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
+            }
+            aria-describedby={errors.email ? "email-error" : undefined}
           />
           {errors.email && (
             <p id="email-error" className="text-sm text-destructive">
@@ -183,8 +185,14 @@ const Signup: React.FC = () => {
             value={formData.password}
             onChange={handleInputChange}
             placeholder="Create a strong password"
-            className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
-            aria-describedby={errors.password ? 'password-error password-help' : 'password-help'}
+            className={
+              errors.password
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
+            }
+            aria-describedby={
+              errors.password ? "password-error password-help" : "password-help"
+            }
           />
           <p id="password-help" className="text-xs text-muted-foreground">
             Must be at least 8 characters with uppercase, lowercase, and numbers
@@ -207,8 +215,14 @@ const Signup: React.FC = () => {
             value={formData.confirmPassword}
             onChange={handleInputChange}
             placeholder="Confirm your password"
-            className={errors.confirmPassword ? 'border-destructive focus-visible:ring-destructive' : ''}
-            aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
+            className={
+              errors.confirmPassword
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
+            }
+            aria-describedby={
+              errors.confirmPassword ? "confirm-password-error" : undefined
+            }
           />
           {errors.confirmPassword && (
             <p id="confirm-password-error" className="text-sm text-destructive">
@@ -219,29 +233,33 @@ const Signup: React.FC = () => {
 
         {/* Terms and Privacy Policy */}
         <div className="text-xs text-muted-foreground">
-          By creating an account, you agree to our{' '}
-          <Link href="/terms" className="text-primary hover:text-primary/80 transition-colors">
+          By creating an account, you agree to our{" "}
+          <Link
+            href="/terms"
+            className="text-primary hover:text-primary/80 transition-colors"
+          >
             Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link href="/privacy" className="text-primary hover:text-primary/80 transition-colors">
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="text-primary hover:text-primary/80 transition-colors"
+          >
             Privacy Policy
           </Link>
           .
         </div>
 
         {/* Submit Button */}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Creating account...' : 'Create account'}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Create account"}
         </Button>
 
         {/* Sign In Link */}
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Already have an account? </span>
+          <span className="text-muted-foreground">
+            Already have an account?{" "}
+          </span>
           <Link
             href="/auth/login"
             className="text-primary hover:text-primary/80 transition-colors font-medium"
