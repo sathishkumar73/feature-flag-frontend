@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/components/auth/Authlayout';
-import OAuthButtons from '@/components/auth/OAuthButtons';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import AuthLayout from "@/components/auth/Authlayout";
+import OAuthButtons from "@/components/auth/OAuthButtons";
+import AuthService from "@/services/authService";
+import { supabase } from "@/lib/supabaseClient";
 
 interface LoginForm {
   email: string;
@@ -19,86 +22,76 @@ interface FormErrors {
   general?: string;
 }
 
-/**
- * Login page component with email/password authentication and OAuth options
- * Includes form validation and error handling
- */
-const Login: React.FC = () => {
-  // Form state management
+const Signin: React.FC = () => {
+  const router = useRouter();
+
+  // Redirect signed-in users to /flags
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace("/flags");
+      }
+    });
+  }, [router]);
+
   const [formData, setFormData] = useState<LoginForm>({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  /**
-   * Handle input changes and clear related errors
-   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    // Clear error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: undefined,
       }));
     }
   };
 
-  /**
-   * Validate form inputs
-   */
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Email validation
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
-    // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Handle form submission
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({});
 
     try {
-      // TODO: Implement actual authentication logic here
-      console.log('Login attempt with:', formData);
+      await AuthService.login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Handle successful login (redirect, store tokens, etc.)
-      console.log('Login successful');
-
-    } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ general: 'Invalid email or password. Please try again.' });
+      // Redirect on successful login
+      router.replace("/flags");
+    } catch (error: any) {
+      setErrors({ general: error.message || "Login failed" });
     } finally {
       setIsLoading(false);
     }
@@ -109,19 +102,15 @@ const Login: React.FC = () => {
       title="Welcome back"
       subtitle="Sign in to your account to continue"
     >
-      {/* OAuth Buttons */}
       <OAuthButtons />
 
-      {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* General Error Message */}
         {errors.general && (
           <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
             {errors.general}
           </div>
         )}
 
-        {/* Email Field */}
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <Input
@@ -132,8 +121,12 @@ const Login: React.FC = () => {
             value={formData.email}
             onChange={handleInputChange}
             placeholder="Enter your email"
-            className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
-            aria-describedby={errors.email ? 'email-error' : undefined}
+            className={
+              errors.email
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
+            }
+            aria-describedby={errors.email ? "email-error" : undefined}
           />
           {errors.email && (
             <p id="email-error" className="text-sm text-destructive">
@@ -142,7 +135,6 @@ const Login: React.FC = () => {
           )}
         </div>
 
-        {/* Password Field */}
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input
@@ -153,8 +145,12 @@ const Login: React.FC = () => {
             value={formData.password}
             onChange={handleInputChange}
             placeholder="Enter your password"
-            className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
-            aria-describedby={errors.password ? 'password-error' : undefined}
+            className={
+              errors.password
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
+            }
+            aria-describedby={errors.password ? "password-error" : undefined}
           />
           {errors.password && (
             <p id="password-error" className="text-sm text-destructive">
@@ -163,7 +159,6 @@ const Login: React.FC = () => {
           )}
         </div>
 
-        {/* Forgot Password Link */}
         <div className="flex justify-end">
           <Link
             href="/auth/forgot-password"
@@ -173,18 +168,14 @@ const Login: React.FC = () => {
           </Link>
         </div>
 
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Signing in...' : 'Sign in'}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign in"}
         </Button>
 
-        {/* Sign Up Link */}
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Don&apos;t have an account? </span>
+          <span className="text-muted-foreground">
+            Don&apos;t have an account?{" "}
+          </span>
           <Link
             href="/auth/signup"
             className="text-primary hover:text-primary/80 transition-colors font-medium"
@@ -197,4 +188,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Signin;

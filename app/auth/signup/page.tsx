@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/auth/Authlayout";
 import OAuthButtons from "@/components/auth/OAuthButtons";
 import AuthService from "@/services/authService";
+import { supabase } from "@/lib/supabaseClient";
 
 interface SignupForm {
   email: string;
@@ -23,7 +25,17 @@ interface FormErrors {
 }
 
 const Signup: React.FC = () => {
-  // Form state management
+  const router = useRouter();
+
+  // Redirect signed-in users to /flags
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace("/flags");
+      }
+    });
+  }, [router]);
+
   const [formData, setFormData] = useState<SignupForm>({
     email: "",
     password: "",
@@ -32,13 +44,8 @@ const Signup: React.FC = () => {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // New state to show verification confirmation
   const [isVerificationSent, setIsVerificationSent] = useState(false);
 
-  /**
-   * Handle input changes and clear related errors
-   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -70,9 +77,6 @@ const Signup: React.FC = () => {
     }
   };
 
-  /**
-   * Validate form inputs
-   */
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -101,9 +105,6 @@ const Signup: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Handle form submission
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -126,7 +127,6 @@ const Signup: React.FC = () => {
     }
   };
 
-  // Render verification message if email sent
   if (isVerificationSent) {
     return (
       <AuthLayout
@@ -148,7 +148,6 @@ const Signup: React.FC = () => {
     );
   }
 
-  // Otherwise render the signup form
   return (
     <AuthLayout
       title="Create your account"

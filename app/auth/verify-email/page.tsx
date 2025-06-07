@@ -33,7 +33,7 @@ export default function VerifyEmail() {
         setLoading(false);
       } else {
         // Redirect to dashboard or home page after successful verification
-        router.replace("/dashboard");
+        router.replace("/flags");
       }
     });
   }, [router]);
