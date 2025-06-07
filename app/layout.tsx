@@ -1,6 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { AppSidebar } from "@/components/Sidebar";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -18,12 +20,47 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
 
-  // Check if current route starts with /auth to hide sidebar and breadcrumb
+  // State to track if we are checking auth
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+
+  // Check if current route starts with /auth to skip sidebar and guard
   const isAuthRoute = pathname?.startsWith("/auth");
 
+  useEffect(() => {
+    // Only check auth for non-auth routes
+    if (!isAuthRoute) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          // If no session, redirect to login
+          router.replace("/auth/login");
+        } else {
+          setSession(session);
+        }
+        setLoading(false);
+      });
+    } else {
+      // No auth check needed on auth pages
+      setLoading(false);
+    }
+  }, [isAuthRoute, router]);
+
+  if (loading) {
+    // Show a loading spinner or placeholder while checking auth
+    return (
+      <html lang="en">
+        <body className="flex items-center justify-center min-h-screen">
+          <p>Loading...</p>
+          <Toaster />
+        </body>
+      </html>
+    );
+  }
+
   if (isAuthRoute) {
-    // For auth routes, just render children without sidebar/breadcrumb
+    // Render auth pages without sidebar
     return (
       <html lang="en">
         <body>
@@ -34,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // For all other routes, show sidebar and breadcrumb
+  // Render app layout with sidebar and breadcrumb for authenticated users
   return (
     <html lang="en">
       <body className="flex">
