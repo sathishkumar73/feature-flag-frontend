@@ -22,10 +22,6 @@ interface FormErrors {
   general?: string;
 }
 
-/**
- * Signup page component with email/password registration and OAuth options
- * Includes comprehensive form validation and error handling
- */
 const Signup: React.FC = () => {
   // Form state management
   const [formData, setFormData] = useState<SignupForm>({
@@ -37,6 +33,9 @@ const Signup: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // New state to show verification confirmation
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
+
   /**
    * Handle input changes and clear related errors
    */
@@ -47,7 +46,6 @@ const Signup: React.FC = () => {
       [name]: value,
     }));
 
-    // Clear error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
         ...prev,
@@ -55,7 +53,6 @@ const Signup: React.FC = () => {
       }));
     }
 
-    // Real-time password confirmation validation
     if (
       name === "confirmPassword" &&
       formData.password &&
@@ -79,14 +76,12 @@ const Signup: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Email validation
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
@@ -96,7 +91,6 @@ const Signup: React.FC = () => {
         "Password must contain at least one uppercase letter, one lowercase letter, and one number";
     }
 
-    // Confirm password validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
@@ -119,12 +113,12 @@ const Signup: React.FC = () => {
     setErrors({});
 
     try {
-      const data = await AuthService.signup({
+      await AuthService.signup({
         email: formData.email,
         password: formData.password,
       });
 
-      alert("Signup successful! Please check your email for verification.");
+      setIsVerificationSent(true);
     } catch (error: any) {
       setErrors({ general: error.message || "Signup failed" });
     } finally {
@@ -132,24 +126,43 @@ const Signup: React.FC = () => {
     }
   };
 
+  // Render verification message if email sent
+  if (isVerificationSent) {
+    return (
+      <AuthLayout
+        title="Verify Your Email"
+        subtitle="A verification link has been sent to your email address."
+      >
+        <p className="mb-4">
+          Please check your inbox and click the verification link to complete
+          your registration.
+        </p>
+        <p className="mb-6">
+          If you don&apos;t see the email, please check your spam or junk
+          folder.
+        </p>
+        <Button asChild>
+          <Link href="/auth/login">Back to Sign In</Link>
+        </Button>
+      </AuthLayout>
+    );
+  }
+
+  // Otherwise render the signup form
   return (
     <AuthLayout
       title="Create your account"
       subtitle="Join us today and get started"
     >
-      {/* OAuth Buttons */}
       <OAuthButtons />
 
-      {/* Signup Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* General Error Message */}
         {errors.general && (
           <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
             {errors.general}
           </div>
         )}
 
-        {/* Email Field */}
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <Input
@@ -174,7 +187,6 @@ const Signup: React.FC = () => {
           )}
         </div>
 
-        {/* Password Field */}
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input
@@ -204,7 +216,6 @@ const Signup: React.FC = () => {
           )}
         </div>
 
-        {/* Confirm Password Field */}
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm password</Label>
           <Input
@@ -231,7 +242,6 @@ const Signup: React.FC = () => {
           )}
         </div>
 
-        {/* Terms and Privacy Policy */}
         <div className="text-xs text-muted-foreground">
           By creating an account, you agree to our{" "}
           <Link
@@ -250,12 +260,10 @@ const Signup: React.FC = () => {
           .
         </div>
 
-        {/* Submit Button */}
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Creating account..." : "Create account"}
         </Button>
 
-        {/* Sign In Link */}
         <div className="text-center text-sm">
           <span className="text-muted-foreground">
             Already have an account?{" "}
