@@ -90,8 +90,9 @@ const Signin: React.FC = () => {
 
       // Redirect on successful login
       router.replace("/flags");
-    } catch (error: any) {
-      setErrors({ general: error.message || "Login failed" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Login failed";
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }

@@ -120,8 +120,9 @@ const Signup: React.FC = () => {
       });
 
       setIsVerificationSent(true);
-    } catch (error: any) {
-      setErrors({ general: error.message || "Signup failed" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Signup failed";
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
