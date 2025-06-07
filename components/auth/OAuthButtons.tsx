@@ -1,20 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabaseClient';
 
-/**
- * Reusable OAuth buttons component for Google and GitHub authentication
- * Includes placeholders for click handlers that will be implemented later
- */
 const OAuthButtons: React.FC = () => {
-  // Placeholder handlers for OAuth authentication
-  const handleGoogleSignIn = () => {
-    console.log('Google OAuth sign-in clicked - implement authentication logic here');
-    // TODO: Implement Google OAuth logic
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    setErrorMessage(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/flags`,
+      },
+    });
+
+    if (error) {
+      console.error('Google OAuth sign-in error:', error.message);
+      setErrorMessage(`Google sign-in failed: ${error.message}`);
+    }
   };
 
-  const handleGitHubSignIn = () => {
-    console.log('GitHub OAuth sign-in clicked - implement authentication logic here');
-    // TODO: Implement GitHub OAuth logic
+  const handleGitHubSignIn = async () => {
+    setErrorMessage(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/flags`,
+      },
+    });
+
+    if (error) {
+      console.error('GitHub OAuth sign-in error:', error.message);
+      setErrorMessage(`GitHub sign-in failed: ${error.message}`);
+    }
   };
 
   return (
@@ -69,6 +87,11 @@ const OAuthButtons: React.FC = () => {
           <span className="bg-card px-4 text-muted-foreground">or</span>
         </div>
       </div>
+
+      {/* Error message UI */}
+      {errorMessage && (
+        <p className="text-sm text-destructive text-center mt-2">{errorMessage}</p>
+      )}
     </div>
   );
 };
