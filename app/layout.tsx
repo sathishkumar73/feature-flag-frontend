@@ -18,24 +18,33 @@ import {
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import Loader3DCube from "@/components/ui/loader";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // State to track if we are checking auth
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Check if current route starts with /auth to skip sidebar and guard
   const isAuthRoute = pathname?.startsWith("/auth");
 
   useEffect(() => {
-    // Only check auth for non-auth routes
     if (!isAuthRoute) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
-          // If no session, redirect to login
           router.replace("/auth/login");
         } else {
           setSession(session);
@@ -43,13 +52,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         setLoading(false);
       });
     } else {
-      // No auth check needed on auth pages
       setLoading(false);
     }
   }, [isAuthRoute, router]);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setShowLogoutModal(false);
+    router.replace("/auth/login");
+  };
+
   if (loading) {
-    // Show a loading spinner or placeholder while checking auth
     return (
       <html lang="en">
         <body className="flex items-center justify-center min-h-screen">
@@ -61,7 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }
 
   if (isAuthRoute) {
-    // Render auth pages without sidebar
     return (
       <html lang="en">
         <body>
@@ -72,27 +85,61 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // Render app layout with sidebar and breadcrumb for authenticated users
   return (
     <html lang="en">
       <body className="flex">
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Feature Flags</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+            <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Feature Flags</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </div>
+
+              {session && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => setShowLogoutModal(true)}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+
+                  <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Confirm Logout</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to logout? You will need to log in again to access the app.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={() => setShowLogoutModal(false)}>
+                          Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleLogout}>
+                          Logout
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
+              )}
             </header>
             <div className="flex flex-1 flex-col gap-4">
               <main className="flex-1 bg-white min-h-screen">{children}</main>
