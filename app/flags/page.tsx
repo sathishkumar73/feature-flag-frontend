@@ -17,7 +17,7 @@ import ExportConfirmModal from '@/components/ExportConfirmModal'; // Import the 
 
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { exportFlagsToCSV } from '@/utils/flag-helpers';
-import { FeatureFlag } from '@/types/flag';
+import { FeatureFlag, FlagEnvironmentFilter, FlagStatusFilter } from '@/types/flag';
 
 const FeatureFlagsPage = () => {
   const {
@@ -28,7 +28,7 @@ const FeatureFlagsPage = () => {
     paginatedFlags, filteredAndSortedFlags, // Keep filteredAndSortedFlags for export
     currentPage, totalPages, goToNextPage, goToPreviousPage,
     handleCreateFlag, handleToggleFlag,
-  } = useFeatureFlags(10);
+  } = useFeatureFlags(10, process.env.NEXT_PUBLIC_API_URL!);
 
   // States for modals
   const [selectedFlag, setSelectedFlag] = useState<FeatureFlag | null>(null);
@@ -69,9 +69,9 @@ const FeatureFlagsPage = () => {
         <FeatureFlagsFilters
           searchTerm={searchTerm}
           onSearchTermChange={setSearchTerm}
-          environmentFilter={environmentFilter}
+          environmentFilter={environmentFilter as FlagEnvironmentFilter}
           onEnvironmentFilterChange={setEnvironmentFilter}
-          statusFilter={statusFilter}
+          statusFilter={statusFilter as FlagStatusFilter}
           onStatusFilterChange={setStatusFilter}
           onExportCSV={handleOpenExportConfirm}
           totalFilteredFlags={filteredAndSortedFlags.length}

@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { FeatureFlag, SortField, SortDirection } from '@/types/flag';
-import { truncateText, formatDate } from '@/utils/flag-helpers';
+import { FeatureFlag, SortField, SortDirection } from '@/types/flag'; // Assuming these types exist
+import { truncateText, formatDate } from '@/utils/flag-helpers'; // Assuming these helpers exist
 import { toast } from 'sonner';
 
 interface FeatureFlagsTableProps {
@@ -17,6 +17,7 @@ interface FeatureFlagsTableProps {
   onSort: (field: SortField) => void;
   onFlagToggle: (flag: FeatureFlag) => void;
   onViewDetails: (flag: FeatureFlag) => void;
+  isTogglingFlagId?: string | null; // Added for better UX during toggle
 }
 
 const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
@@ -26,6 +27,7 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
   onSort,
   onFlagToggle,
   onViewDetails,
+  isTogglingFlagId, // Destructure the new prop
 }) => {
 
   const handleCopyFlagId = (flagId: string) => {
@@ -37,7 +39,6 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
     <Table>
       <TableHeader>
         <TableRow>
-          {/* Name Column - Sortable */}
           <TableHead className="w-[200px]">
             <Button
               variant="ghost"
@@ -54,7 +55,6 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
           <TableHead className="w-[120px]">Environment</TableHead>
           <TableHead className="w-[100px]">Enabled</TableHead>
           <TableHead className="w-[100px]">Rollout %</TableHead>
-          {/* Created At Column - Sortable */}
           <TableHead className="w-[120px]">
             <Button
               variant="ghost"
@@ -94,6 +94,7 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
                   checked={flag.enabled}
                   onCheckedChange={() => onFlagToggle(flag)}
                   aria-label={`Toggle ${flag.name}`}
+                  disabled={isTogglingFlagId === flag.id} // Disable switch while this flag is being toggled
                 />
               </TableCell>
               <TableCell>{flag.rolloutPercentage}%</TableCell>

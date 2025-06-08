@@ -6,23 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-
-interface FeatureFlag {
-  id: string;
-  name: string;
-  description: string;
-  environment: string;
-  enabled: boolean;
-  rolloutPercentage: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { FeatureFlag } from '@/types/flag';
 
 interface ToggleFlagModalProps {
   flag: FeatureFlag | null;
   isOpen: boolean;
   onClose: () => void;
-  onToggleFlag: (flagId: string, enabled: boolean, reason: string) => void;
+  onToggleFlag: (flag: FeatureFlag) => Promise<void>;
 }
 
 const ToggleFlagModal: React.FC<ToggleFlagModalProps> = ({ 
@@ -45,7 +35,7 @@ const ToggleFlagModal: React.FC<ToggleFlagModalProps> = ({
       return;
     }
 
-    onToggleFlag(flag.id, isEnabling, reason);
+    onToggleFlag(flag);
     
     toast.success(`"${flag.name}" has been ${isEnabling ? 'enabled' : 'disabled'}.`);
 
@@ -56,6 +46,13 @@ const ToggleFlagModal: React.FC<ToggleFlagModalProps> = ({
   const handleCancel = () => {
     setReason('');
     onClose();
+  };
+
+  const handleConfirm = async () => {
+    if (flag) {
+      await onToggleFlag(flag);
+      onClose();
+    }
   };
 
   return (
