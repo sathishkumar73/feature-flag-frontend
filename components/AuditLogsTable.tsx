@@ -1,158 +1,163 @@
-"use client";
-
-import * as React from "react";
+// components/AuditLogsTable.tsx
+import React from 'react';
+import { Copy, Eye, ChevronUp, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { CardContent } from '@/components/ui/card'; // Using CardContent for padding/styling
+import { AuditLog, AuditLogSortField, AuditLogSortOrder } from '@/components/types/audit-log';
 import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { AuditLog, AuditLogsTableProps } from "@/components/types/audit-log";
+  formatTimestamp,
+  copyToClipboard,
+  getActionIcon,
+  getActionColor,
+  getStatusIcon,
+  getStatusColor,
+} from '@/utils/audit-log-helpers';
 
-const AuditLogsTable: React.FC<AuditLogsTableProps> = ({ loading, auditLogs }) => {
-  const [expandedDetails, setExpandedDetails] = React.useState<{ [id: string]: boolean }>({});
+interface AuditLogsTableProps {
+  logs: AuditLog[];
+  sortField: AuditLogSortField;
+  sortOrder: AuditLogSortOrder;
+  onSort: (field: AuditLogSortField) => void;
+  onViewDetails: (log: AuditLog) => void;
+  totalFilteredLogsCount: number;
+  paginatedLogsCount: number;
+}
 
-  const toggleDetails = (id: string) => {
-    setExpandedDetails((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  const columns: ColumnDef<AuditLog>[] = [
-    {
-      accessorKey: "createdAt",
-      header: "Timestamp",
-      cell: ({ row }) => new Date(row.getValue("createdAt")).toLocaleString(),
-    },
-    {
-      accessorKey: "performedBy",
-      header: "User",
-    },
-    {
-      accessorKey: "action",
-      header: "Action",
-    },
-    {
-      accessorKey: "details",
-      header: "Details",
-      cell: ({ row }) => {
-        const details = JSON.stringify(row.getValue("details"));
-        const isExpanded = expandedDetails[row.original.id];
-        const truncatedDetails =
-          details && details.length > 100 ? `${details.substring(0, 100)}... (Click to expand)` : details;
-
-        return (
-          <div
-            className="cursor-pointer w-full"
-            onClick={() => toggleDetails(row.original.id)}
-            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-          >
-            {isExpanded ? (
-              <textarea
-                readOnly
-                value={details || ""}
-                className="w-full h-[200px] overflow-visible border rounded p-2"
-                style={{ minHeight: '100px' }}
-              />
+const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
+  logs,
+  sortField,
+  sortOrder,
+  onSort,
+  onViewDetails,
+  totalFilteredLogsCount,
+  paginatedLogsCount,
+}) => {
+  return (
+    <CardContent>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-foreground">Audit Trail</h2>
+        <div className="text-sm text-muted-foreground">
+          Showing {paginatedLogsCount} of {totalFilteredLogsCount} logs
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse" role="table" aria-label="Audit logs table">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="text-left p-3 font-medium text-foreground">
+                <button
+                  onClick={() => onSort('timestamp')}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                  aria-label="Sort by timestamp"
+                >
+                  Timestamp
+                  {sortField === 'timestamp' && (
+                    sortOrder === 'desc' ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />
+                  )}
+                </button>
+              </th>
+              <th className="text-left p-3 font-medium text-foreground">
+                <button
+                  onClick={() => onSort('user')}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                  aria-label="Sort by user"
+                >
+                  User
+                  {sortField === 'user' && (
+                    sortOrder === 'desc' ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />
+                  )}
+                </button>
+              </th>
+              <th className="text-left p-3 font-medium text-foreground">Action</th>
+              <th className="text-left p-3 font-medium text-foreground">Entity</th>
+              <th className="text-left p-3 font-medium text-foreground">Details</th>
+              <th className="text-left p-3 font-medium text-foreground">Status</th>
+              <th className="text-left p-3 font-medium text-foreground">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                  No audit logs found matching your criteria.
+                </td>
+              </tr>
             ) : (
-              truncatedDetails
+              logs.map((log) => (
+                <tr
+                  key={log.id}
+                  className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => onViewDetails(log)}
+                  role="row"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onViewDetails(log);
+                    }
+                  }}
+                  aria-label={`View details for ${log.action} action on ${log.entity} by ${log.user}`}
+                >
+                  <td className="p-3 text-sm text-foreground">{formatTimestamp(log.timestamp)}</td>
+                  <td className="p-3">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-foreground">{log.user}</div>
+                      <div className="text-xs text-muted-foreground">{log.userEmail}</div>
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <Badge className={`inline-flex items-center gap-1 ${getActionColor(log.action)}`}>
+                      {getActionIcon(log.action)}
+                      {log.action}
+                    </Badge>
+                  </td>
+                  <td className="p-3">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-foreground">{log.entity}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{log.entityId}</div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-sm text-foreground max-w-xs truncate">{log.details}</td>
+                  <td className="p-3">
+                    <div className={`flex items-center gap-1 text-sm font-medium ${getStatusColor(log.status)}`}>
+                      {getStatusIcon(log.status)}
+                      {log.status}
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyToClipboard(log.entityId, 'Entity ID');
+                        }}
+                        aria-label="Copy entity ID"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails(log);
+                        }}
+                        aria-label="View details"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
-          </div>
-        );
-      },
-    },
-  ];
-
-  const skeletonColumns: ColumnDef<AuditLog>[] = columns.map((column) => ({
-    ...column,
-    cell: () => <Skeleton className="h-6 w-full" />,
-  }));
-  const columnsToUse = loading ? skeletonColumns : columns;
-
-  const table = useReactTable({
-    data: loading
-      ? Array.from({ length: 5 }, (_, index) => ({ id: String(index) } as AuditLog))
-      : auditLogs,
-    columns: columnsToUse as ColumnDef<AuditLog>[],
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  const numColumns = columnsToUse.length;
-  const gridTemplateColumns = `1fr 1fr 1fr 2fr`;
-
-
-  return (
-    <div className="rounded-md border max-h-[500px]">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} style={{ display: 'grid', gridTemplateColumns }}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="py-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.original.id}
-                data-state={row.getIsSelected() && "selected"}
-                style={{ display: 'grid', gridTemplateColumns, height: expandedDetails[row.original.id] ? 'auto' : 'inherit' }}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="py-3" style={{ display: 'flex', alignItems: 'flex-start' }}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : !loading ? (
-            <TableRow style={{ display: 'grid', gridTemplateColumns }}>
-              <TableCell
-                colSpan={numColumns}
-                className="h-24 text-center py-3"
-                style={{ display: 'flex', justifyContent: 'center' }}
-              >
-                No Audit Logs Found
-              </TableCell>
-            </TableRow>
-          ) : null}
-        </TableBody>
-      </Table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </CardContent>
   );
 };
 
-const areEqual = (prevProps: AuditLogsTableProps, nextProps: AuditLogsTableProps) => {
-  if (
-    prevProps.loading !== nextProps.loading &&
-    prevProps.auditLogs === nextProps.auditLogs
-  ) {
-    return true;
-  }
-  return (
-    prevProps.loading === nextProps.loading &&
-    prevProps.auditLogs === nextProps.auditLogs
-  );
-};
-
-export default React.memo(AuditLogsTable, areEqual);
+export default AuditLogsTable;

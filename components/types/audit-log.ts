@@ -1,19 +1,18 @@
-export interface AuditLogRequestParams {
-  flagId?: string;
-}
-
-export interface AuditLogsTableProps {
-  auditLogs: AuditLog[];
-  loading: boolean;
-  error: string | null;
-}
-
 export interface AuditLog {
-  action: string;
-  flagId: string;
-  flagName: string;
-  performedBy: string;
-  details?: string | null;
-  createdAt: Date;
   id: string;
+  timestamp: string; // ISO date string
+  user: string;
+  userEmail: string;
+  action: 'Create' | 'Update' | 'Delete';
+  entity: string; // e.g., flag name
+  entityId: string; // e.g., flag ID
+  details: string; // short summary
+  status: 'Success' | 'Failure';
+  fullDetails?: string;
+  metadata?: Record<string, any>;
 }
+
+export type AuditLogActionFilter = 'all' | AuditLog['action'];
+export type AuditLogStatusFilter = 'all' | AuditLog['status'];
+export type AuditLogSortField = 'timestamp' | 'user';
+export type AuditLogSortOrder = 'asc' | 'desc';
