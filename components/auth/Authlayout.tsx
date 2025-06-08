@@ -1,4 +1,5 @@
 import React from 'react';
+import AuthHeader from './AuthHeader';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -14,7 +15,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) =>
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
-        {/* Header */}
+        {/* Brand Header */}
+        <AuthHeader />
+
+        {/* Page Header */}
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">
             {title}
