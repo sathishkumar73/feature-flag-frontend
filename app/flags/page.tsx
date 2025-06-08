@@ -108,6 +108,7 @@ const FeatureFlagsPage = () => {
 
         <CreateFlagModal
           isOpen={createModalOpen}
+          backendUrl={process.env.NEXT_PUBLIC_API_URL!}
           onClose={() => setCreateModalOpen(false)}
           onCreateFlag={handleCreateFlag}
         />
