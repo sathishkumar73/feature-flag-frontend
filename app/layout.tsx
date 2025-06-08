@@ -17,6 +17,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import Loader3DCube from "@/components/ui/loader";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -52,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
       <html lang="en">
         <body className="flex items-center justify-center min-h-screen">
-          <p>Loading...</p>
+          <Loader3DCube />
           <Toaster />
         </body>
       </html>

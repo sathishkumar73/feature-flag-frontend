@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import Loader3DCube from "@/components/ui/loader";
 
 export default function VerifyEmail() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function VerifyEmail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
+        <Loader3DCube />
         <p className="text-center text-lg">Verifying your email...</p>
       </div>
     );
