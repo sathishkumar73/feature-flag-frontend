@@ -16,7 +16,7 @@ class AuthService extends BaseService {
   }
 
   async login(payload: LoginPayload) {
-    return this.post("/api/auth/login", payload);
+    return this.post("/auth/login", payload);
   }
 
   // Add more auth-related methods here if needed
