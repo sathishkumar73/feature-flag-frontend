@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { updateFlag } from "@/services/flagService";
+import flagService from "@/services/flagService";
 import { FeatureFlag } from "@/components/types/flag";
 
 interface EditFlagDialogProps {
@@ -42,12 +42,12 @@ export default function EditFlagDialog({
 
   const handleSaveFlag = async () => {
     try {
-      const response = await updateFlag(initialFlag.id, {
+      const response = await flagService.updateFlag(initialFlag.id, {
         name,
         description,
         environment,
         enabled,
-      });
+      }) as FeatureFlag;
       toast.success("Feature flag updated successfully.");
       onOpenChange(false);
       onFlagUpdated?.(response);

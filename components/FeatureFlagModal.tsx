@@ -1,22 +1,12 @@
 "use client";
 
 import React from 'react';
-import { X, Calendar, Settings, Activity } from 'lucide-react';
+import { Calendar, Settings, Activity } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-
-interface FeatureFlag {
-  id: string;
-  name: string;
-  description: string;
-  environment: string;
-  enabled: boolean;
-  rolloutPercentage: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { FeatureFlag } from '@/types/flag';
 
 interface FeatureFlagModalProps {
   flag: FeatureFlag;

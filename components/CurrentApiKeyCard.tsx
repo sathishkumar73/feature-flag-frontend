@@ -1,12 +1,12 @@
 "use client";
 import React from 'react';
-import { Eye, Trash2, Plus, AlertTriangle, Key } from 'lucide-react';
+import { Eye, Trash2, Key, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ApiKey } from '@/components/types/api-key';
 import { formatDate } from '@/components/types/api-key.helpers';
-import GenerateKeyConfirmDialog from '@/components/GenerateKeyConfirmDialog'; // Import the new dialog component
+import GenerateKeyConfirmDialog from '@/components/GenerateKeyConfirmDialog';
 
 interface CurrentApiKeyCardProps {
   currentKey: ApiKey | null;
@@ -83,7 +83,7 @@ const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-amber-800 dark:text-amber-200">
                     <p className="font-medium">Security Notice</p>
-                    <p>This is the only time you'll be able to see the complete API key. Make sure to copy and store it securely.</p>
+                    <p>This is the only time you&apos;ll be able to see the complete API key. Make sure to copy and store it securely.</p>
                   </div>
                 </div>
               )}

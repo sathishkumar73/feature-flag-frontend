@@ -9,7 +9,7 @@ export interface AuditLog {
   details: string; // short summary
   status: 'Success' | 'Failure';
   fullDetails?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 export type AuditLogActionFilter = 'all' | AuditLog['action'];

@@ -228,12 +228,12 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
   };
 
   // --- Create Flag Handler (POST /flags) ---
-  const handleCreateFlag = async (newFlagData: CreateFeatureFlagDto) => {
+  const handleCreateFlag = async (newFlagData: CreateFeatureFlagDto): Promise<FeatureFlag | null> => {
     if (!userAccessToken) {
       toast.error("You are not authenticated. Please log in to create flags.");
-      return; // Return early if not authenticated
+      return null;
     }
-    setIsCreatingFlag(true); // Set loading state for creation
+    setIsCreatingFlag(true);
     try {
       const response = await fetch(`${backendUrl}/flags`, {
         method: 'POST',
@@ -249,17 +249,17 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
         throw new Error(errorData.message || `Failed to create flag: ${response.statusText}`);
       }
 
-      const newFlag: CreatedFlagResponse = await response.json();
+      const newFlag: FeatureFlag = await response.json();
       setFlags(prevFlags => [...prevFlags, newFlag]); // Add new flag to local state
       toast.success(`Feature flag "${newFlag.name}" has been created successfully.`);
       fetchFlags(); // Re-fetch all flags to ensure consistency (optional, can be optimized)
-      return newFlag; // Return the created flag if needed by caller (e.g., for optimistic updates)
+      return newFlag;
     } catch (err: any) {
       console.error('Error creating feature flag:', err);
       toast.error(err.message || "An unexpected error occurred while creating the flag.");
-      throw err; // Re-throw the error so the caller (CreateFlagModal) can handle it if necessary (e.g., prevent closing)
+      return null;
     } finally {
-      setIsCreatingFlag(false); // Reset loading state
+      setIsCreatingFlag(false);
     }
   };
 

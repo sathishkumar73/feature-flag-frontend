@@ -48,13 +48,6 @@ const ToggleFlagModal: React.FC<ToggleFlagModalProps> = ({
     onClose();
   };
 
-  const handleConfirm = async () => {
-    if (flag) {
-      await onToggleFlag(flag);
-      onClose();
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">

@@ -17,12 +17,12 @@ export const formatDate = (dateString: string): string => {
 };
 
 // Copy API key to clipboard
-export const copyToClipboard = async (text: string, successMessage?: string, errorMessage?: string) => {
+export const copyToClipboard = async (text: string, successMessage: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    toast.success(successMessage || "Copied to clipboard!");
+    toast.success(successMessage);
   } catch {
-    toast.error(errorMessage || "Failed to copy to clipboard.");
+    toast.error('Failed to copy to clipboard');
   }
 };
 
@@ -42,7 +42,8 @@ export const mockGenerateNewApiKey = async (): Promise<{ newKey: ApiKey; plainKe
   throw new Error('Not implemented');
 };
 
-export const mockRevokeApiKey = async (keyId: string): Promise<void> => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const mockRevokeApiKey = async (_keyId: string): Promise<void> => {
   // TODO: Replace with actual API call
   throw new Error('Not implemented');
 };

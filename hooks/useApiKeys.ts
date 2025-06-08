@@ -138,6 +138,7 @@ export const useApiKeys = () => {
     keyHistory,
     isGenerating,
     showNewKeyModal,
+    setShowNewKeyModal,
     isCurrentKeyRevealed,
     isLoading,
     generateNewApiKey,

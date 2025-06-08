@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { FeatureFlag } from '@/types/flag';
 // Removed toast import as error/success toasts are now handled by the hook
 // Removed supabase import as auth logic is handled by the hook
 
@@ -25,9 +26,7 @@ interface CreateFeatureFlagDto {
 interface CreateFlagModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // FIX: onCreateFlag now takes formData and returns a Promise, as the hook handles the async operation
-  onCreateFlag: (formData: CreateFeatureFlagDto) => Promise<any>;
-  // FIX: Added isSubmitting prop to control loading state from parent/hook
+  onCreateFlag: (formData: CreateFeatureFlagDto) => Promise<FeatureFlag | null>;
   isSubmitting: boolean;
 }
 

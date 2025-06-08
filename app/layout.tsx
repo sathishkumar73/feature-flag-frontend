@@ -28,15 +28,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Session } from '@supabase/supabase-js';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const isAuthRoute = pathname?.startsWith("/auth");

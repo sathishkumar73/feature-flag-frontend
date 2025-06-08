@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DeleteFlagDialogProps } from "./types/flag-list";
-import { deleteFlag } from "@/services/flagService";
+import flagService from "@/services/flagService";
 import { toast } from "sonner";
 
 export default function DeleteFlagDialog({
@@ -25,7 +25,7 @@ export default function DeleteFlagDialog({
     onOpenChange(true);
     if (flagToDelete?.id) {
       try {
-        await deleteFlag(flagToDelete.id);
+        await flagService.deleteFlag(flagToDelete.id);
         toast.success(
           `Feature flag "${flagToDelete.name}" deleted successfully.`
         );
