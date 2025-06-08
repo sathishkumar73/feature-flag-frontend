@@ -1,11 +1,10 @@
-// app/feature-flags/page.tsx (or wherever your main page is)
+// app/feature-flags/page.tsx
 "use client";
 
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 
-// Import the new modularized components and hook
 import FeatureFlagsHeader from '@/components/FeatureFlagsHeader';
 import FeatureFlagsFilters from '@/components/FeatureFlagsFilters';
 import FeatureFlagsTable from '@/components/FeatureFlagsTable';
@@ -13,7 +12,7 @@ import FeatureFlagsPagination from '@/components/FeatureFlagsPagination';
 import CreateFlagModal from '@/components/CreateFlagModal';
 import ToggleFlagModal from '@/components/ToggleFlagModal';
 import FeatureFlagModal from '@/components/FeatureFlagModal';
-import ExportConfirmModal from '@/components/ExportConfirmModal'; // Import the new modal
+import ExportConfirmModal from '@/components/ExportConfirmModal';
 
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { exportFlagsToCSV } from '@/utils/flag-helpers';
@@ -25,9 +24,16 @@ const FeatureFlagsPage = () => {
     environmentFilter, setEnvironmentFilter,
     statusFilter, setStatusFilter,
     sortField, sortDirection, handleSort,
-    paginatedFlags, filteredAndSortedFlags, // Keep filteredAndSortedFlags for export
+    paginatedFlags, filteredAndSortedFlags,
     currentPage, totalPages, goToNextPage, goToPreviousPage,
-    handleCreateFlag, handleToggleFlag,
+    handleCreateFlag, // This is the function we pass to CreateFlagModal
+    handleToggleFlag,
+    isLoadingFlags,
+    isAuthLoading,
+    error,
+    isCreatingFlag, // FIX: Destructure isCreatingFlag from the hook
+    isTogglingFlagId,
+    userAccessToken // Keep if needed for other checks or components
   } = useFeatureFlags(10, process.env.NEXT_PUBLIC_API_URL!);
 
   // States for modals
@@ -35,14 +41,13 @@ const FeatureFlagsPage = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [toggleModalOpen, setToggleModalOpen] = useState(false);
   const [flagToToggle, setFlagToToggle] = useState<FeatureFlag | null>(null);
-  const [exportConfirmModalOpen, setExportConfirmModalOpen] = useState(false); // New state for export modal
+  const [exportConfirmModalOpen, setExportConfirmModalOpen] = useState(false);
 
   const handleSwitchToggle = (flag: FeatureFlag) => {
     setFlagToToggle(flag);
     setToggleModalOpen(true);
   };
 
-  // Function to open the export confirmation modal
   const handleOpenExportConfirm = () => {
     if (filteredAndSortedFlags.length === 0) {
       toast.info("No flags to export.", {
@@ -53,11 +58,36 @@ const FeatureFlagsPage = () => {
     setExportConfirmModalOpen(true);
   };
 
-  // Function called when export is confirmed
   const handleConfirmExport = () => {
     exportFlagsToCSV(filteredAndSortedFlags, toast);
-    setExportConfirmModalOpen(false); // Close the modal after export
+    setExportConfirmModalOpen(false);
   };
+
+  // --- Conditional Rendering for Loading/Error/Auth States ---
+  if (isAuthLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-xl">Authenticating with Supabase...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-xl text-red-500">
+        Error: {error}
+        <p className="mt-2 text-base text-gray-600">Please check your network connection or ensure you are logged in.</p>
+      </div>
+    );
+  }
+
+  if (!userAccessToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-xl text-gray-600">
+        You are not logged in. Please log in to manage feature flags.
+      </div>
+    );
+  }
+
+  if (isLoadingFlags) {
+    return <div className="min-h-screen flex items-center justify-center text-xl">Loading feature flags...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -86,6 +116,7 @@ const FeatureFlagsPage = () => {
             onSort={handleSort}
             onFlagToggle={handleSwitchToggle}
             onViewDetails={setSelectedFlag}
+            isTogglingFlagId={isTogglingFlagId} // Pass to disable specific switches
           />
         </Card>
 
@@ -108,9 +139,11 @@ const FeatureFlagsPage = () => {
 
         <CreateFlagModal
           isOpen={createModalOpen}
-          backendUrl={process.env.NEXT_PUBLIC_API_URL!}
+          // FIX: Removed backendUrl from here as the modal no longer uses it for API calls
+          // backendUrl={process.env.NEXT_PUBLIC_API_URL!}
           onClose={() => setCreateModalOpen(false)}
-          onCreateFlag={handleCreateFlag}
+          onCreateFlag={handleCreateFlag} // This sends the form data to the hook
+          isSubmitting={isCreatingFlag} // FIX: Pass the isCreatingFlag state to control modal's UI
         />
 
         <ToggleFlagModal
@@ -120,10 +153,13 @@ const FeatureFlagsPage = () => {
             setToggleModalOpen(false);
             setFlagToToggle(null);
           }}
-          onToggleFlag={handleToggleFlag}
+          onToggleFlag={async (flag) => {
+            if (flag) {
+              await handleToggleFlag(flag);
+            }
+          }}
         />
 
-        {/* New Export Confirmation Modal */}
         <ExportConfirmModal
           isOpen={exportConfirmModalOpen}
           onClose={() => setExportConfirmModalOpen(false)}

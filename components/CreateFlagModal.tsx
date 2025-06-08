@@ -1,5 +1,6 @@
+// components/CreateFlagModal.tsx
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,10 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+// Removed toast import as error/success toasts are now handled by the hook
+// Removed supabase import as auth logic is handled by the hook
 
-import { supabase } from '@/lib/supabaseClient'; // Adjust path as needed
-
+// DTO for creating a flag (what we send to backend)
 interface CreateFeatureFlagDto {
   name: string;
   description?: string;
@@ -20,25 +21,22 @@ interface CreateFeatureFlagDto {
   rolloutPercentage?: number;
 }
 
-interface CreatedFlagResponse {
-  id: string;
-  name: string;
-  description: string;
-  environment: "Production" | "Staging" | "Development";
-  enabled: boolean;
-  rolloutPercentage: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
+// Removed CreatedFlagResponse and backendUrl, as this component doesn't interact with the API directly
 interface CreateFlagModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateFlag: (flag: CreatedFlagResponse) => void;
-  backendUrl: string;
+  // FIX: onCreateFlag now takes formData and returns a Promise, as the hook handles the async operation
+  onCreateFlag: (formData: CreateFeatureFlagDto) => Promise<any>;
+  // FIX: Added isSubmitting prop to control loading state from parent/hook
+  isSubmitting: boolean;
 }
 
-const CreateFlagModal: React.FC<CreateFlagModalProps> = ({ isOpen, onClose, onCreateFlag, backendUrl }) => {
+const CreateFlagModal: React.FC<CreateFlagModalProps> = ({
+  isOpen,
+  onClose,
+  onCreateFlag,
+  isSubmitting // Use the prop for loading state
+}) => {
   const [formData, setFormData] = useState<CreateFeatureFlagDto>({
     name: '',
     description: '',
@@ -46,8 +44,15 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({ isOpen, onClose, onCr
     enabled: false,
     rolloutPercentage: 0
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
+
+  // FIX: Removed internal isLoading and isAuthLoading states, they are replaced by isSubmitting prop
+
+  // Reset form when modal opens or closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   const resetForm = () => {
     setFormData({
@@ -62,63 +67,23 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({ isOpen, onClose, onCr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Basic client-side validation for required fields
     if (!formData.name || !formData.environment || (formData.description === undefined || formData.description === '')) {
-      toast.error("Please fill in all required fields (Name, Description, Environment).");
+      // You might want to add a toast here for immediate user feedback on invalid form
+      alert("Please fill in all required fields (Name, Description, Environment)."); // Using alert for simplicity
       return;
     }
 
-    setIsLoading(true);
-    setIsAuthLoading(true);
-
-    let accessToken: string | null = null;
+    // FIX: Call the onCreateFlag prop, which is expected to be the hook's function
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw new Error(`Supabase session error: ${sessionError.message}`);
-      if (!session || !session.access_token) throw new Error("User not authenticated. Please log in.");
-      accessToken = session.access_token;
-    } catch (authError: any) {
-      console.error('Authentication Error:', authError);
-      toast.error(authError.message || "Could not get authentication token. Please log in again.");
-      setIsLoading(false);
-      setIsAuthLoading(false);
-      return;
-    } finally {
-      setIsAuthLoading(false);
-    }
-
-    try {
-      const payload: CreateFeatureFlagDto = {
-        name: formData.name,
-        environment: formData.environment,
-        ...(formData.description && { description: formData.description }),
-        ...(formData.enabled !== undefined && { enabled: formData.enabled }),
-        ...(formData.rolloutPercentage !== undefined && { rolloutPercentage: formData.rolloutPercentage }),
-      };
-
-      const response = await fetch(`${backendUrl}/flags`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to create flag: ${response.statusText}`);
-      }
-
-      const newFlag: CreatedFlagResponse = await response.json();
-      onCreateFlag(newFlag);
-      toast.success(`Feature flag "${newFlag.name}" has been created successfully.`);
-      resetForm();
-      onClose();
-    } catch (apiError: any) {
-      console.error('Error creating feature flag:', apiError);
-      toast.error(apiError.message || "An unexpected error occurred while creating the flag.");
-    } finally {
-      setIsLoading(false);
+      await onCreateFlag(formData); // This call triggers the API request in the hook
+      resetForm(); // Reset form on successful submission
+      onClose();   // Close modal on successful submission
+    } catch (error) {
+      // The hook's onCreateFlag function should handle its own error toasts.
+      // This catch block can be used for any local UI error handling if needed,
+      // but typically, the hook handles the primary user feedback.
+      console.error("Form submission error handled by parent:", error);
     }
   };
 
@@ -127,8 +92,9 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({ isOpen, onClose, onCr
     onClose();
   };
 
-  const submitButtonText = isLoading ? (isAuthLoading ? 'Authenticating...' : 'Creating...') : 'Create Flag';
-  const isFormDisabled = isLoading || isAuthLoading;
+  // FIX: Form disabled state and button text controlled by isSubmitting prop
+  const isFormDisabled = isSubmitting;
+  const submitButtonText = isSubmitting ? 'Creating...' : 'Create Flag';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

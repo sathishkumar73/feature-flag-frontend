@@ -1,3 +1,4 @@
+// hooks/useFeatureFlags.ts
 "use client";
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -230,9 +231,9 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
   const handleCreateFlag = async (newFlagData: CreateFeatureFlagDto) => {
     if (!userAccessToken) {
       toast.error("You are not authenticated. Please log in to create flags.");
-      return;
+      return; // Return early if not authenticated
     }
-    setIsCreatingFlag(true);
+    setIsCreatingFlag(true); // Set loading state for creation
     try {
       const response = await fetch(`${backendUrl}/flags`, {
         method: 'POST',
@@ -252,13 +253,13 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
       setFlags(prevFlags => [...prevFlags, newFlag]); // Add new flag to local state
       toast.success(`Feature flag "${newFlag.name}" has been created successfully.`);
       fetchFlags(); // Re-fetch all flags to ensure consistency (optional, can be optimized)
-      return newFlag; // Return the created flag if needed by caller
+      return newFlag; // Return the created flag if needed by caller (e.g., for optimistic updates)
     } catch (err: any) {
       console.error('Error creating feature flag:', err);
       toast.error(err.message || "An unexpected error occurred while creating the flag.");
-      return null;
+      throw err; // Re-throw the error so the caller (CreateFlagModal) can handle it if necessary (e.g., prevent closing)
     } finally {
-      setIsCreatingFlag(false);
+      setIsCreatingFlag(false); // Reset loading state
     }
   };
 
@@ -269,10 +270,9 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
       return;
     }
 
-    setIsTogglingFlagId(flag.id); // Set the flag being toggled to disable its switch
+    setIsTogglingFlagId(flag.id);
 
     const originalEnabledState = flag.enabled;
-    // Optimistic UI Update: Update the local state immediately
     setFlags(prevFlags =>
       prevFlags.map(f =>
         f.id === flag.id ? { ...f, enabled: !f.enabled } : f
@@ -286,7 +286,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userAccessToken}`,
         },
-        body: JSON.stringify({ enabled: !originalEnabledState }), // Send the new state
+        body: JSON.stringify({ enabled: !originalEnabledState }),
       });
 
       if (!response.ok) {
@@ -295,20 +295,16 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
       }
 
       toast.success(`Feature flag "${flag.name}" has been ${!originalEnabledState ? 'enabled' : 'disabled'}.`);
-      // Optionally, if your backend returns the updated flag, you could use it to update state
-      // const updatedFlag: FeatureFlag = await response.json();
-      // setFlags(prevFlags => prevFlags.map(f => f.id === updatedFlag.id ? updatedFlag : f));
     } catch (err: any) {
       console.error('Error toggling flag:', err);
       toast.error(err.message || `Failed to toggle flag "${flag.name}". Reverting...`);
-      // Revert UI on error to original state
       setFlags(prevFlags =>
         prevFlags.map(f =>
           f.id === flag.id ? { ...f, enabled: originalEnabledState } : f
         )
       );
     } finally {
-      setIsTogglingFlagId(null); // Clear the toggling state
+      setIsTogglingFlagId(null);
     }
   };
 
@@ -325,7 +321,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     isLoadingFlags,
     isAuthLoading,
     error,
-    isCreatingFlag,
+    isCreatingFlag, // Expose this to disable table switch
     isTogglingFlagId, // Expose this to disable table switch
     userAccessToken // Might be useful for other components if needed
   };
