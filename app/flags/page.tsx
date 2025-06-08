@@ -1,3 +1,4 @@
+// app/feature-flags/page.tsx (or wherever your main page is)
 "use client";
 
 import React, { useState } from 'react';
@@ -12,38 +13,50 @@ import FeatureFlagsPagination from '@/components/FeatureFlagsPagination';
 import CreateFlagModal from '@/components/CreateFlagModal';
 import ToggleFlagModal from '@/components/ToggleFlagModal';
 import FeatureFlagModal from '@/components/FeatureFlagModal';
+import ExportConfirmModal from '@/components/ExportConfirmModal'; // Import the new modal
 
-import { useFeatureFlags } from '@/hooks/useFeatureFlags'; // Import the custom hook
-import { exportFlagsToCSV } from '@/utils/flag-helpers'; // Import the utility function
-import { FeatureFlag } from '@/types/flag'; // Import the type
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { exportFlagsToCSV } from '@/utils/flag-helpers';
+import { FeatureFlag } from '@/types/flag';
 
 const FeatureFlagsPage = () => {
-  // Use the custom hook to manage all feature flag logic and state
   const {
-    flags, // Not directly used for display, but useful if you need to pass raw flags
     searchTerm, setSearchTerm,
     environmentFilter, setEnvironmentFilter,
     statusFilter, setStatusFilter,
     sortField, sortDirection, handleSort,
-    paginatedFlags, filteredAndSortedFlags,
+    paginatedFlags, filteredAndSortedFlags, // Keep filteredAndSortedFlags for export
     currentPage, totalPages, goToNextPage, goToPreviousPage,
     handleCreateFlag, handleToggleFlag,
-    itemsPerPage
-  } = useFeatureFlags(10); // Pass itemsPerPage to the hook
+  } = useFeatureFlags(10);
 
   // States for modals
   const [selectedFlag, setSelectedFlag] = useState<FeatureFlag | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [toggleModalOpen, setToggleModalOpen] = useState(false);
   const [flagToToggle, setFlagToToggle] = useState<FeatureFlag | null>(null);
+  const [exportConfirmModalOpen, setExportConfirmModalOpen] = useState(false); // New state for export modal
 
   const handleSwitchToggle = (flag: FeatureFlag) => {
     setFlagToToggle(flag);
     setToggleModalOpen(true);
   };
 
-  const handleExport = () => {
+  // Function to open the export confirmation modal
+  const handleOpenExportConfirm = () => {
+    if (filteredAndSortedFlags.length === 0) {
+      toast.info("No flags to export.", {
+        description: "Please adjust your filters or create flags to export data."
+      });
+      return;
+    }
+    setExportConfirmModalOpen(true);
+  };
+
+  // Function called when export is confirmed
+  const handleConfirmExport = () => {
     exportFlagsToCSV(filteredAndSortedFlags, toast);
+    setExportConfirmModalOpen(false); // Close the modal after export
   };
 
   return (
@@ -60,7 +73,7 @@ const FeatureFlagsPage = () => {
           onEnvironmentFilterChange={setEnvironmentFilter}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
-          onExportCSV={handleExport}
+          onExportCSV={handleOpenExportConfirm}
           totalFilteredFlags={filteredAndSortedFlags.length}
         />
 
@@ -107,6 +120,14 @@ const FeatureFlagsPage = () => {
             setFlagToToggle(null);
           }}
           onToggleFlag={handleToggleFlag}
+        />
+
+        {/* New Export Confirmation Modal */}
+        <ExportConfirmModal
+          isOpen={exportConfirmModalOpen}
+          onClose={() => setExportConfirmModalOpen(false)}
+          onConfirm={handleConfirmExport}
+          totalFlagsToExport={filteredAndSortedFlags.length}
         />
       </div>
     </div>
