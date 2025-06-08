@@ -6,10 +6,9 @@ import {
   Copy,
   Plus,
   Eye,
-  EyeOff,
   AlertTriangle,
   Trash2,
-} from "lucide-react";
+} from "lucide-react"; // EyeOff is no longer strictly needed if full key is removed
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,17 +34,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner"
+import { toast } from "sonner";
 
 interface ApiKey {
   id: string;
   partialKey: string;
-  fullKey?: string;
+  fullKey?: string; // fullKey should only be present temporarily
   createdAt: string;
   revokedAt?: string;
   status: "active" | "revoked";
 }
 
+// Key to store the session flag in sessionStorage
+const SESSION_KEY_SEEN_FLAG_PREFIX = "apiKeySeen_"; // Prefix to tie flag to specific key ID
+
+// Helper to format date string
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString("en-US", {
     year: "numeric",
@@ -60,109 +63,189 @@ const ApiKeyPage = () => {
   const [currentKey, setCurrentKey] = useState<ApiKey | null>(null);
   const [keyHistory, setKeyHistory] = useState<ApiKey[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showFullKey, setShowFullKey] = useState(false);
+  const [showFullKeyModal, setShowFullKeyModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
+  // This state tracks if the full key for the *current* active key has been revealed/confirmed
+  // in the current session. This helps control the "Show" button and main display.
+  const [isCurrentKeyRevealed, setIsCurrentKeyRevealed] = useState(false);
+
+  // On mount, fetch key info from backend (simulate here)
   useEffect(() => {
-    // Replace with your real API call
-    const mockHistory: ApiKey[] = [
-      {
-        id: "1",
-        partialKey: "ff_sk_****_****_****_7a3b",
-        createdAt: "2024-06-05T10:30:00Z",
-        revokedAt: "2024-06-06T14:20:00Z",
-        status: "revoked",
-      },
-      {
-        id: "2",
-        partialKey: "ff_sk_****_****_****_9c2d",
-        createdAt: "2024-06-04T09:15:00Z",
-        revokedAt: "2024-06-05T10:30:00Z",
-        status: "revoked",
-      },
-    ];
-    setKeyHistory(mockHistory);
+    async function fetchKeys() {
+      try {
+        // Simulate API call: replace this with real API call
+        // The plainKey would only be returned by the backend ONCE upon creation/initial fetch.
+        const res = await new Promise<{ currentKey: ApiKey | null; history: ApiKey[]; plainKey?: string }>((resolve) =>
+          setTimeout(() => {
+            // For demonstration, let's assume `mockCurrentKey` comes with `fullKey` initially,
+            // as if it was just generated or fetched for the first time.
+            const initialMockFullKey = "ff_sk_abcd1234efgh5678ijkl9012mnop3456";
+            const mockCurrentKey: ApiKey = {
+              id: "abc123",
+              partialKey: "ff_sk_****_****_****_3456",
+              fullKey: initialMockFullKey, // Backend would only send this once
+              createdAt: new Date().toISOString(),
+              status: "active",
+            };
+            const mockHistory: ApiKey[] = [
+              {
+                id: "1",
+                partialKey: "ff_sk_****_****_****_1a2b",
+                createdAt: "2024-06-05T10:30:00Z",
+                revokedAt: "2024-06-06T14:20:00Z",
+                status: "revoked",
+              },
+              {
+                id: "2",
+                partialKey: "ff_sk_****_****_****_3c4d",
+                createdAt: "2024-06-04T09:15:00Z",
+                revokedAt: "2024-06-05T10:30:00Z",
+                status: "revoked",
+              },
+            ];
+            resolve({ currentKey: mockCurrentKey, history: mockHistory, plainKey: initialMockFullKey });
+          }, 1000)
+        );
+
+        setCurrentKey(res.currentKey);
+        setKeyHistory(res.history);
+
+        // Check if the current key's full value has been seen in this session
+        // This is crucial for the "visible only once per session" logic
+        if (res.currentKey && res.plainKey) {
+            const hasSeen = sessionStorage.getItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${res.currentKey.id}`) === "true";
+            if (!hasSeen) {
+                // If not seen, show the modal and mark the key as not yet revealed
+                setShowFullKeyModal(true);
+                setIsCurrentKeyRevealed(false);
+            } else {
+                // If already seen, remove fullKey from state immediately and mark as revealed
+                setCurrentKey(prev => prev ? { ...prev, fullKey: undefined } : null);
+                setIsCurrentKeyRevealed(true);
+            }
+        } else {
+            // If no plainKey was returned (e.g., typical subsequent page load),
+            // assume it's already "revealed" for display purposes.
+            setIsCurrentKeyRevealed(true);
+        }
+
+      } catch (error) {
+        toast.error("Failed to load API key data.");
+      }
+    }
+    fetchKeys();
   }, []);
 
+  // Copy API key to clipboard
+  const copyToClipboard = async (key: string) => {
+    if (!currentKey) return;
+    try {
+      await navigator.clipboard.writeText(key);
+      toast.success("API key copied to clipboard");
+      // Mark as revealed/copied for this session
+      setIsCurrentKeyRevealed(true);
+      sessionStorage.setItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${currentKey.id}`, "true");
+      // Remove fullKey from state after copy for security
+      setCurrentKey((prev) => prev ? { ...prev, fullKey: undefined } : prev);
+      setShowFullKeyModal(false); // Close the modal
+    } catch {
+      toast.error("Failed to copy API key");
+    }
+  };
+
+  // Confirm that user copied the key (if they just close the modal)
+  const handleModalCloseWithoutCopy = () => {
+    if (!currentKey) return;
+    // If the modal is closed and the key hasn't been explicitly copied yet (i.e., fullKey still exists in state)
+    // we still mark it as "seen" for this session to prevent the modal from reappearing.
+    if (currentKey.fullKey) {
+        setIsCurrentKeyRevealed(true);
+        sessionStorage.setItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${currentKey.id}`, "true");
+        setCurrentKey((prev) => prev ? { ...prev, fullKey: undefined } : prev); // Remove full key from state
+    }
+    setShowFullKeyModal(false);
+  };
+
+
+  // Generate a new API key - call backend, show modal with new plain key
   const generateNewApiKey = async () => {
     setIsGenerating(true);
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Replace with real API call:
+      const res = await new Promise<{ newKey: ApiKey; plainKey: string }>((resolve) =>
+        setTimeout(() => {
+          const newFullKey = `ff_sk_${Math.random()
+            .toString(36)
+            .substring(2, 15)}_${Math.random()
+            .toString(36)
+            .substring(2, 15)}_${Math.random()
+            .toString(36)
+            .substring(2, 15)}_${Math.random().toString(36).substring(2, 6)}`;
 
-      const newFullKey = `ff_sk_${Math.random()
-        .toString(36)
-        .substring(2, 15)}_${Math.random()
-        .toString(36)
-        .substring(2, 15)}_${Math.random()
-        .toString(36)
-        .substring(2, 15)}_${Math.random().toString(36).substring(2, 6)}`;
-      const newPartialKey = `ff_sk_****_****_****_${newFullKey.slice(-4)}`;
+          const newPartialKey = `ff_sk_****_****_****_${newFullKey.slice(-4)}`;
+          const newKeyId = Date.now().toString(); // New unique ID for the new key
 
-      const newKey: ApiKey = {
-        id: Date.now().toString(),
-        partialKey: newPartialKey,
-        fullKey: newFullKey,
-        createdAt: new Date().toISOString(),
-        status: "active",
-      };
+          resolve({
+            newKey: {
+              id: newKeyId,
+              partialKey: newPartialKey,
+              fullKey: newFullKey, // Full key is present only immediately after creation
+              createdAt: new Date().toISOString(),
+              status: "active",
+            },
+            plainKey: newFullKey,
+          });
+        }, 1500)
+      );
 
+      // Revoke old key in history
       if (currentKey) {
-        const revokedKey = {
+        const revokedKey: ApiKey = {
           ...currentKey,
-          status: "revoked",
+          status: "revoked" as const,
           revokedAt: new Date().toISOString(),
           fullKey: undefined,
         };
-        setKeyHistory((prev) => [revokedKey as ApiKey, ...prev]);
+        setKeyHistory((prev) => [revokedKey, ...prev]);
+        // Clear session storage flag for the old key, though not strictly necessary as it's revoked
+        sessionStorage.removeItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${currentKey.id}`);
       }
 
-      setCurrentKey(newKey);
-      setShowFullKey(true);
+      setCurrentKey(res.newKey);
+      // Reset the "revealed" state for the NEW key
+      setIsCurrentKeyRevealed(false);
+      // Clear session storage flag for the NEW key, as it's new and unseen
+      sessionStorage.removeItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${res.newKey.id}`);
+      setShowFullKeyModal(true); // Always show modal for new key
       setShowConfirmDialog(false);
 
       toast.success("API Key Generated", {
         description:
           "Your new API key has been generated successfully. Make sure to copy it now - you won't be able to see it again!",
       });
-    } catch (error) {
-      toast.error("Error", {
-        description: "Failed to generate new API key. Please try again.",
-      });
+    } catch {
+      toast.error("Failed to generate new API key.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Copied!", {
-        description: "API key copied to clipboard",
-      });
-    } catch (error) {
-      toast.error("Error", {
-        description: "Failed to copy to clipboard",
-      });
-    }
-  };
-
+  // Revoke current key (simulate)
   const revokeCurrentKey = () => {
-    if (currentKey) {
-      const revokedKey = {
-        ...currentKey,
-        status: "revoked",
-        revokedAt: new Date().toISOString(),
-        fullKey: undefined,
-      };
-      setKeyHistory((prev) => [revokedKey as ApiKey, ...prev]);
-      setCurrentKey(null);
-      setShowFullKey(false);
-
-      toast.success("API Key Revoked", {
-        description: "Your API key has been revoked successfully.",
-      });
-    }
+    if (!currentKey) return;
+    const revokedKey: ApiKey = {
+      ...currentKey,
+      status: "revoked" as const,
+      revokedAt: new Date().toISOString(),
+      fullKey: undefined,
+    };
+    setKeyHistory((prev) => [revokedKey, ...prev]);
+    setCurrentKey(null); // No active key
+    setShowFullKeyModal(false); // Close any open modal
+    setIsCurrentKeyRevealed(false); // Reset revealed state
+    sessionStorage.removeItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${currentKey.id}`); // Clear session flag
+    toast.success("API Key Revoked");
   };
 
   return (
@@ -188,7 +271,8 @@ const ApiKeyPage = () => {
               Current API Key
               <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
+                  {/* Disable generate button if there's an active key and its full value hasn't been copied/confirmed yet */}
+                  <Button className="gap-2" disabled={!!currentKey && !isCurrentKeyRevealed}>
                     <Plus className="h-4 w-4" />
                     Generate New API Key
                   </Button>
@@ -227,10 +311,19 @@ const ApiKeyPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">API Key:</span>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setShowFullKey(!showFullKey)} className="h-8 gap-1">
-                        {showFullKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                        {showFullKey ? "Hide" : "Show"}
-                      </Button>
+                      {/* Show button only if full key is *not* already revealed for this session */}
+                      {!isCurrentKeyRevealed && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowFullKeyModal(true)}
+                          className="h-8 gap-1"
+                          disabled={!currentKey.fullKey} // Disable if fullKey isn't even in state
+                        >
+                          <Eye className="h-3 w-3" />
+                          Show
+                        </Button>
+                      )}
                       <Button variant="destructive" size="sm" onClick={revokeCurrentKey} className="h-8 gap-1">
                         <Trash2 className="h-3 w-3" />
                         Revoke
@@ -238,24 +331,16 @@ const ApiKeyPage = () => {
                     </div>
                   </div>
 
-                  <div className="relative">
-                    <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all border">
-                      {showFullKey && currentKey.fullKey ? currentKey.fullKey : currentKey.partialKey}
-                    </div>
-                    {showFullKey && currentKey.fullKey && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => copyToClipboard(currentKey.fullKey!)}
-                        className="absolute top-2 right-2 h-7 gap-1"
-                      >
-                        <Copy className="h-3 w-3" />
-                        Copy
-                      </Button>
-                    )}
+                  {/* The actual key display */}
+                  <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all border">
+                    {/* Display full key only if it's in state and not yet revealed for this session */}
+                    {currentKey.fullKey && !isCurrentKeyRevealed
+                      ? currentKey.fullKey
+                      : currentKey.partialKey}
                   </div>
 
-                  {showFullKey && currentKey.fullKey && (
+                  {/* Security Notice: only show if full key is temporarily present AND not yet revealed */}
+                  {currentKey.fullKey && !isCurrentKeyRevealed && (
                     <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <div className="text-sm text-amber-800 dark:text-amber-200">
@@ -287,6 +372,7 @@ const ApiKeyPage = () => {
                 <p className="text-muted-foreground mb-4">
                   Generate your first API key to start using the Feature Flag service
                 </p>
+                <Button onClick={() => setShowConfirmDialog(true)}>Generate API Key</Button>
               </div>
             )}
           </CardContent>
@@ -331,6 +417,42 @@ const ApiKeyPage = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Show full key modal (for initial display or newly generated keys) */}
+        <Dialog open={showFullKeyModal} onOpenChange={setShowFullKeyModal}>
+            <DialogContent onEscapeKeyDown={handleModalCloseWithoutCopy}> {/* Handle ESC key */}
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Key className="h-5 w-5 text-primary" />
+                        Your API Key
+                    </DialogTitle>
+                    <DialogDescription>
+                        This is the only time you will be able to see the full API key. Please copy it securely.
+                    </DialogDescription>
+                </DialogHeader>
+                <pre className="p-4 bg-muted rounded-md font-mono text-sm break-all">
+                    {currentKey?.fullKey || "API Key not available"}
+                </pre>
+                <div className="flex gap-3 mt-4">
+                    <Button
+                        onClick={() => currentKey?.fullKey && copyToClipboard(currentKey.fullKey)}
+                        className="flex-1"
+                        disabled={!currentKey?.fullKey}
+                    >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Key
+                    </Button>
+                    <Button
+                        onClick={handleModalCloseWithoutCopy} // Use the combined handler
+                        className="flex-1"
+                        variant="outline"
+                    >
+                        I Have Copied / Close
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );
