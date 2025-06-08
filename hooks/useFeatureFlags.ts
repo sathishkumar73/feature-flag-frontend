@@ -2,63 +2,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { FeatureFlag, SortField, SortDirection, FlagStatusFilter, FlagEnvironmentFilter } from '@/types/flag'; // Import types
 
-// Mock data (could be fetched from an API in a real app)
-const initialFlags: FeatureFlag[] = [
-  {
-    id: 'flag_001',
-    name: 'new-checkout-flow',
-    description: 'Enable the new streamlined checkout process with improved UX and conversion tracking',
-    environment: 'Production',
-    enabled: true,
-    rolloutPercentage: 75,
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-20T14:45:00Z'
-  },
-  {
-    id: 'flag_002',
-    name: 'dark-mode-toggle',
-    description: 'Allow users to switch between light and dark themes',
-    environment: 'Staging',
-    enabled: false,
-    rolloutPercentage: 0,
-    createdAt: '2024-01-18T09:15:00Z',
-    updatedAt: '2024-01-19T16:20:00Z'
-  },
-  {
-    id: 'flag_003',
-    name: 'advanced-analytics',
-    description: 'Show advanced analytics dashboard with detailed metrics and reporting capabilities for premium users',
-    environment: 'Development',
-    enabled: true,
-    rolloutPercentage: 100,
-    createdAt: '2024-01-12T11:45:00Z',
-    updatedAt: '2024-01-22T13:30:00Z'
-  },
-  {
-    id: 'flag_004',
-    name: 'social-login',
-    description: 'Enable social media login options (Google, GitHub, Discord)',
-    environment: 'Production',
-    enabled: true,
-    rolloutPercentage: 50,
-    createdAt: '2024-01-10T08:20:00Z',
-    updatedAt: '2024-01-21T10:15:00Z'
-  },
-  {
-    id: 'flag_005',
-    name: 'beta-features',
-    description: 'Access to experimental features for beta testing program',
-    environment: 'Staging',
-    enabled: true,
-    rolloutPercentage: 25,
-    createdAt: '2024-01-08T14:10:00Z',
-    updatedAt: '2024-01-23T09:40:00Z'
-  }
-];
-
-
 export const useFeatureFlags = (itemsPerPage: number = 10) => {
-  const [flags, setFlags] = useState<FeatureFlag[]>(initialFlags);
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState<FlagEnvironmentFilter>('All');
   const [statusFilter, setStatusFilter] = useState<FlagStatusFilter>('All');

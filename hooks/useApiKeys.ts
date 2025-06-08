@@ -15,6 +15,7 @@ export const useApiKeys = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false); // Controls the "show full key once" modal
   const [isCurrentKeyRevealed, setIsCurrentKeyRevealed] = useState(false); // Tracks if current active key's full value has been confirmed/seen this session
+  const [isLoading, setIsLoading] = useState(true);
 
   // Function to mark a key as "seen" in session storage and update state
   const markKeyAsRevealed = useCallback((keyId: string) => {
@@ -27,6 +28,7 @@ export const useApiKeys = () => {
   useEffect(() => {
     async function fetchKeys() {
       try {
+        setIsLoading(true);
         const { currentKey: fetchedCurrentKey, history: fetchedHistory, plainKey: initialPlainKey } = await mockFetchApiKeys();
 
         setCurrentKey(fetchedCurrentKey);
@@ -49,6 +51,8 @@ export const useApiKeys = () => {
         }
       } catch (error) {
         toast.error("Failed to load API key data.");
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchKeys();
@@ -134,8 +138,8 @@ export const useApiKeys = () => {
     keyHistory,
     isGenerating,
     showNewKeyModal,
-    setShowNewKeyModal,
     isCurrentKeyRevealed,
+    isLoading,
     generateNewApiKey,
     revokeCurrentKey,
     handleCopyKey,

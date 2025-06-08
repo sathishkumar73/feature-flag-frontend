@@ -26,79 +26,23 @@ export const copyToClipboard = async (text: string, successMessage?: string, err
   }
 };
 
-// --- Mock API Functions (for simulation) ---
-// In a real app, these would be actual API calls.
+// --- API Functions ---
+// These functions will be replaced with actual API calls in the future.
 
 export const mockFetchApiKeys = async (): Promise<{ currentKey: ApiKey | null; history: ApiKey[]; plainKey?: string }> => {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      // Simulate that 'initialMockFullKey' is returned ONLY if the current key has NOT been seen yet
-      // or if it's a new session.
-      const existingKeyId = "abc123";
-      const initialMockFullKey = "ff_sk_abcd1234efgh5678ijkl9012mnop3456";
-      const hasKeyBeenSeenInSession = sessionStorage.getItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${existingKeyId}`) === "true";
-
-      const mockCurrentKey: ApiKey = {
-        id: existingKeyId,
-        partialKey: "ff_sk_****_****_****_3456",
-        fullKey: hasKeyBeenSeenInSession ? undefined : initialMockFullKey, // Only include fullKey if not seen
-        createdAt: "2024-06-07T15:00:00Z", // Fixed timestamp for consistency
-        status: "active",
-      };
-      const mockHistory: ApiKey[] = [
-        {
-          id: "1",
-          partialKey: "ff_sk_****_****_****_1a2b",
-          createdAt: "2024-06-05T10:30:00Z",
-          revokedAt: "2024-06-06T14:20:00Z",
-          status: "revoked",
-        },
-        {
-          id: "2",
-          partialKey: "ff_sk_****_****_****_3c4d",
-          createdAt: "2024-06-04T09:15:00Z",
-          revokedAt: "2024-06-05T10:30:00Z",
-          status: "revoked",
-        },
-      ];
-      resolve({
-        currentKey: mockCurrentKey,
-        history: mockHistory,
-        plainKey: hasKeyBeenSeenInSession ? undefined : initialMockFullKey // Only plainKey if it hasn't been seen
-      });
-    }, 1000)
-  );
+  // TODO: Replace with actual API call
+  return {
+    currentKey: null,
+    history: [],
+  };
 };
 
 export const mockGenerateNewApiKey = async (): Promise<{ newKey: ApiKey; plainKey: string }> => {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      const newFullKey = `ff_sk_${Math.random()
-        .toString(36)
-        .substring(2, 15)}_${Math.random()
-        .toString(36)
-        .substring(2, 15)}_${Math.random()
-        .toString(36)
-        .substring(2, 15)}_${Math.random().toString(36).substring(2, 6)}`;
-
-      const newPartialKey = `ff_sk_****_****_****_${newFullKey.slice(-4)}`;
-      const newKeyId = Date.now().toString(); // New unique ID for the new key
-
-      resolve({
-        newKey: {
-          id: newKeyId,
-          partialKey: newPartialKey,
-          fullKey: newFullKey, // Full key is present only immediately after creation
-          createdAt: new Date().toISOString(),
-          status: "active",
-        },
-        plainKey: newFullKey,
-      });
-    }, 1500)
-  );
+  // TODO: Replace with actual API call
+  throw new Error('Not implemented');
 };
 
-// Simulate API call for revoking a key
 export const mockRevokeApiKey = async (keyId: string): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, 500));
+  // TODO: Replace with actual API call
+  throw new Error('Not implemented');
 };
