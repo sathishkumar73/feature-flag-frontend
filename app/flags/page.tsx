@@ -17,6 +17,7 @@ import ExportConfirmModal from '@/components/ExportConfirmModal';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { exportFlagsToCSV } from '@/utils/flag-helpers';
 import { FeatureFlag, FlagEnvironmentFilter, FlagStatusFilter } from '@/types/flag';
+import Loader3DCube from '@/components/ui/loader';
 
 const FeatureFlagsPage = () => {
   const {
@@ -86,7 +87,7 @@ const FeatureFlagsPage = () => {
   }
 
   if (isLoadingFlags) {
-    return <div className="min-h-screen flex items-center justify-center text-xl">Loading feature flags...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-xl"><Loader3DCube/></div>;
   }
 
   return (

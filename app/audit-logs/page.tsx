@@ -16,6 +16,7 @@ import AuditLogExportConfirmModal from '@/components/AuditLogExportConfirmModal'
 import { useAuditLogs } from '@/hooks/useAuditLogs'; // Import the custom hook
 import { exportAuditLogsToCSV } from '@/utils/audit-log-helpers'; // Import utility for CSV export
 import { AuditLog } from '@/components/types/audit-log'; // Import the type
+import Loader3DCube from '@/components/ui/loader';
 
 const AuditLogsPage = () => {
   // Use the custom hook to manage all audit log logic and state
@@ -26,6 +27,10 @@ const AuditLogsPage = () => {
     sortField, sortOrder, handleSort,
     paginatedLogs, filteredAndSortedLogs, // Keep filteredAndSortedLogs for export
     currentPage, totalPages, goToNextPage, goToPreviousPage,
+    isLoadingLogs,
+    isAuthLoading,
+    error,
+    userAccessToken
   } = useAuditLogs(10, process.env.NEXT_PUBLIC_API_URL!); // Pass itemsPerPage to the hook
 
   // States for modals
@@ -48,6 +53,10 @@ const AuditLogsPage = () => {
     exportAuditLogsToCSV(filteredAndSortedLogs, toast);
     setExportConfirmModalOpen(false); // Close the modal after export
   };
+
+  if (isLoadingLogs) {
+    return <div className="min-h-screen flex items-center justify-center text-xl"><Loader3DCube/></div>;
+  }
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
