@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -41,6 +42,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const isAuthRoute = pathname?.startsWith("/auth");
+
+  const segments = pathname.split("/").filter(Boolean);
 
   useEffect(() => {
     if (!isAuthRoute) {
@@ -106,10 +109,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <BreadcrumbItem>
                         <BreadcrumbLink href="/">Home</BreadcrumbLink>
                       </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>Feature Flags</BreadcrumbPage>
-                      </BreadcrumbItem>
+                      {segments.map((segment, idx) => {
+                        const href = "/" + segments.slice(0, idx + 1).join("/");
+                        const isLast = idx === segments.length - 1;
+                        return (
+                          <React.Fragment key={href}>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem>
+                              {isLast ? (
+                                <BreadcrumbPage>
+                                  {segment.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                </BreadcrumbPage>
+                              ) : (
+                                <BreadcrumbLink href={href}>
+                                  {segment.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                </BreadcrumbLink>
+                              )}
+                            </BreadcrumbItem>
+                          </React.Fragment>
+                        );
+                      })}
                     </BreadcrumbList>
                   </Breadcrumb>
                 </div>
