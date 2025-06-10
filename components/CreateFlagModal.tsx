@@ -107,7 +107,7 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Flag Name *</Label>
+            <Label htmlFor="name" className="mb-2">Flag Name *</Label>
             <Input
               id="name"
               value={formData.name}
@@ -119,7 +119,7 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="description">Description *</Label>
+            <Label htmlFor="description" className="mb-2">Description *</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -131,7 +131,7 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="environment">Environment *</Label>
+            <Label htmlFor="environment" className="mb-2">Environment *</Label>
             <Select
               value={formData.environment}
               onValueChange={(value) => setFormData({ ...formData, environment: value })}
@@ -149,7 +149,7 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({
           </div>
 
           <div className="flex items-center justify-between space-x-2">
-            <Label htmlFor="enabled">Enabled (Initial State)</Label>
+            <Label htmlFor="enabled" className="mb-2">Enabled (Initial State)</Label>
             <Switch
               id="enabled"
               checked={formData.enabled}
@@ -159,7 +159,7 @@ const CreateFlagModal: React.FC<CreateFlagModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="rollout">Initial Rollout Percentage</Label>
+            <Label htmlFor="rollout" className="mb-2">Initial Rollout Percentage</Label>
             <Input
               id="rollout"
               type="number"

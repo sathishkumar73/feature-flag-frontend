@@ -52,10 +52,10 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
             </Button>
           </TableHead>
           <TableHead>Description</TableHead>
-          <TableHead className="w-[120px]">Environment</TableHead>
-          <TableHead className="w-[100px]">Enabled</TableHead>
-          <TableHead className="w-[100px]">Rollout %</TableHead>
-          <TableHead className="w-[120px]">
+          <TableHead>Environment</TableHead>
+          <TableHead>Enabled</TableHead>
+          <TableHead>Rollout %</TableHead>
+          <TableHead>
             <Button
               variant="ghost"
               onClick={() => onSort('createdAt')}
@@ -67,7 +67,7 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
               )}
             </Button>
           </TableHead>
-          <TableHead className="w-[100px]">Actions</TableHead>
+          <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

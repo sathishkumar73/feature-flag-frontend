@@ -109,7 +109,7 @@ const FeatureFlagsPage = () => {
         />
 
         {/* Feature Flags Table */}
-        <Card>
+        <Card className="px-6">
           <FeatureFlagsTable
             flags={paginatedFlags}
             sortField={sortField}
