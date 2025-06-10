@@ -30,6 +30,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Session } from '@supabase/supabase-js';
+import AuthListener from '@/components/auth/AuthListener';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -67,8 +68,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
       <html lang="en">
         <body className="flex items-center justify-center min-h-screen">
-          <Loader3DCube />
-          <Toaster />
+          <AuthListener>
+            <Loader3DCube />
+            <Toaster />
+          </AuthListener>
         </body>
       </html>
     );
@@ -78,8 +81,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
       <html lang="en">
         <body>
-          {children}
-          <Toaster />
+          <AuthListener>
+            {children}
+            <Toaster />
+          </AuthListener>
         </body>
       </html>
     );
@@ -88,65 +93,67 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="flex">
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
-              <div className="flex items-center gap-2">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>Feature Flags</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
+        <AuthListener>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="-ml-1" />
+                  <Separator orientation="vertical" className="mr-2 h-4" />
+                  <Breadcrumb>
+                    <BreadcrumbList>
+                      <BreadcrumbItem>
+                        <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>Feature Flags</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </BreadcrumbList>
+                  </Breadcrumb>
+                </div>
+
+                {session && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={() => setShowLogoutModal(true)}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </Button>
+
+                    <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Confirm Logout</DialogTitle>
+                          <DialogDescription>
+                            Are you sure you want to logout? You will need to log in again to access the app.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="flex gap-2 justify-end">
+                          <Button variant="outline" onClick={() => setShowLogoutModal(false)}>
+                            Cancel
+                          </Button>
+                          <Button variant="destructive" onClick={handleLogout}>
+                            Logout
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                )}
+              </header>
+              <div className="flex flex-1 flex-col gap-4">
+                <main className="flex-1 bg-white min-h-screen">{children}</main>
               </div>
-
-              {session && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                    onClick={() => setShowLogoutModal(true)}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </Button>
-
-                  <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirm Logout</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to logout? You will need to log in again to access the app.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="flex gap-2 justify-end">
-                        <Button variant="outline" onClick={() => setShowLogoutModal(false)}>
-                          Cancel
-                        </Button>
-                        <Button variant="destructive" onClick={handleLogout}>
-                          Logout
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              )}
-            </header>
-            <div className="flex flex-1 flex-col gap-4">
-              <main className="flex-1 bg-white min-h-screen">{children}</main>
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
-        <Toaster />
+            </SidebarInset>
+          </SidebarProvider>
+          <Toaster />
+        </AuthListener>
       </body>
     </html>
   );
