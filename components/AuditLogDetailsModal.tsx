@@ -75,7 +75,7 @@ const AuditLogDetailsModal: React.FC<AuditLogDetailsModalProps> = ({ log, isOpen
             </div>
           </div>
 
-          {/* Action and Entity */}
+          {/* Action */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Action</label>
@@ -85,22 +85,6 @@ const AuditLogDetailsModal: React.FC<AuditLogDetailsModalProps> = ({ log, isOpen
                 {getActionIcon(log.action)}
                 {log.action}
               </Badge>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Entity</label>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium text-foreground">{log.entity}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{log.entityId}</div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(log.entityId, 'Entity ID')}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </div>
             </div>
           </div>
 

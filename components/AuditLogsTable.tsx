@@ -70,7 +70,6 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 </button>
               </th>
               <th className="text-left p-3 font-medium text-foreground">Action</th>
-              <th className="text-left p-3 font-medium text-foreground">Entity</th>
               <th className="text-left p-3 font-medium text-foreground">Details</th>
               <th className="text-left p-3 font-medium text-foreground">Status</th>
               <th className="text-left p-3 font-medium text-foreground">Actions</th>
@@ -101,8 +100,8 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                   <td className="p-3 text-sm text-foreground">{formatTimestamp(log.timestamp)}</td>
                   <td className="p-3">
                     <div className="space-y-1">
-                      <div className="text-sm font-medium text-foreground">{log.user}</div>
-                      <div className="text-xs text-muted-foreground">{log.userEmail}</div>
+                      <div className="text-sm font-medium text-foreground">{log.performedById}</div>
+                      <div className="text-xs text-muted-foreground">{log.performedById}</div>
                     </div>
                   </td>
                   <td className="p-3">
@@ -110,12 +109,6 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                       {getActionIcon(log.action)}
                       {log.action}
                     </Badge>
-                  </td>
-                  <td className="p-3">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-foreground">{log.entity}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{log.entityId}</div>
-                    </div>
                   </td>
                   <td className="p-3 text-sm text-foreground max-w-xs truncate">{log.details}</td>
                   <td className="p-3">

@@ -9,6 +9,7 @@ export interface AuditLog {
   details: string; // short summary
   status: 'Success' | 'Failure';
   fullDetails?: string;
+  performedById: string;
   metadata?: Record<string, string | number | boolean | null>;
 }
 
