@@ -47,7 +47,7 @@ const ApiKeyPage = () => {
           isOpen={showNewKeyModal}
           onClose={handleModalCloseConfirmation} // This handles both "I Have Copied" and simple modal close
           onCopyKey={handleCopyKey}
-          fullKey={currentKey?.fullKey} // Pass the fullKey from state to the modal
+          fullKey={currentKey?.fullKey}
         />
       </div>
     </div>
