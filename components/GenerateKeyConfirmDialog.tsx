@@ -44,10 +44,10 @@ const GenerateKeyConfirmDialog: React.FC<GenerateKeyConfirmDialogProps> = ({
             Generate New API Key
           </DialogTitle>
           <DialogDescription className="space-y-2">
-            <p>Generating a new API key will immediately revoke your current key.</p>
-            <p className="font-medium text-foreground">
+            <div>Generating a new API key will immediately revoke your current key.</div>
+            <div className="font-medium text-foreground">
               This action cannot be undone. Make sure to update all applications using the current key.
-            </p>
+            </div>
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-3 pt-4">
