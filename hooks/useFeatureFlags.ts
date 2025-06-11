@@ -323,6 +323,6 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     error,
     isCreatingFlag, // Expose this to disable table switch
     isTogglingFlagId, // Expose this to disable table switch
-    userAccessToken // Might be useful for other components if needed
+    userAccessToken, // Might be useful for other components if needed
   };
 };

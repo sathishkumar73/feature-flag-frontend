@@ -7,6 +7,8 @@ export interface FeatureFlag {
     rolloutPercentage: number;
     createdAt: string; // ISO date string
     updatedAt: string; // ISO date string
+    createdById: string;
+    updatedById: string;
   }
   
   export type SortField = 'name' | 'createdAt';
