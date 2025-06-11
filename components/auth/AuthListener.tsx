@@ -11,7 +11,7 @@ const AuthListener: React.FC<AuthListenerProps> = ({ children }) => {
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
           try {
-            await fetch("http://localhost:4000/auth/upsert", {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/upsert`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

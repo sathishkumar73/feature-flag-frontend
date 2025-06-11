@@ -64,7 +64,7 @@ export const useApiKeys = () => {
         setIsLoading(true);
 
         // 1. Fetch current active API key + plainKey
-        const data = await authFetch("http://localhost:4000/api-keys");
+        const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys`);
         // data: { apiKey: ApiKey, plainKey: string }
 
         // 2. Fetch key history separately (adjust endpoint as per your backend)
@@ -139,7 +139,7 @@ export const useApiKeys = () => {
     try {
       // POST to /api-keys to generate new key
       // Backend returns { newKey: ApiKey, plainKey: string }
-      const data = await authFetch("http://localhost:4000/api-keys", {
+      const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys`, {
         method: "POST",
       });
       const { newKey, plainKey } = data;
@@ -147,7 +147,7 @@ export const useApiKeys = () => {
       // Revoke old key if exists (optional call)
       if (currentKey) {
         try {
-          await authFetch(`http://localhost:4000/api-keys/${currentKey.id}`, {
+          await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys/${currentKey.id}`, {
             method: "DELETE",
           });
 
@@ -190,7 +190,7 @@ export const useApiKeys = () => {
     }
     if (!currentKey) return;
     try {
-      await authFetch(`http://localhost:4000/api-keys/${currentKey.id}`, {
+      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys/${currentKey.id}`, {
         method: "DELETE",
       });
 

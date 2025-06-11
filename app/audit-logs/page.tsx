@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -27,10 +26,7 @@ const AuditLogsPage = () => {
     sortField, sortOrder, handleSort,
     paginatedLogs, filteredAndSortedLogs, // Keep filteredAndSortedLogs for export
     currentPage, totalPages, goToNextPage, goToPreviousPage,
-    isLoadingLogs,
-    isAuthLoading,
-    error,
-    userAccessToken
+    isLoadingLogs
   } = useAuditLogs(10, process.env.NEXT_PUBLIC_API_URL!); // Pass itemsPerPage to the hook
 
   // States for modals
