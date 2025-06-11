@@ -17,6 +17,14 @@ interface CurrentApiKeyCardProps {
   onShowNewKeyModal: () => void;
 }
 
+// Utility to mask API key (e.g., 12345xxxx.xxxx)
+function maskApiKey(key: string | undefined): string {
+  if (!key) return '';
+  const [first, ...rest] = key.split('.')
+  if (!rest.length) return key.slice(0, 5) + 'xxxx.xxxx';
+  return first.slice(0, 5) + 'xxxx.' + rest.join('.').replace(/./g, 'x');
+}
+
 const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
   currentKey,
   isGenerating,
@@ -70,11 +78,23 @@ const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
               </div>
 
               {/* The actual key display */}
-              <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all border">
-                {/* Display full key only if it's in state and not yet revealed for this session */}
-                {currentKey.fullKey && !isCurrentKeyRevealed
-                  ? currentKey.fullKey
-                  : currentKey.partialKey}
+              <div className="p-3 bg-muted rounded-lg font-mono text-base flex items-center justify-between border">
+                <span>
+                  {isCurrentKeyRevealed && currentKey.fullKey
+                    ? currentKey.fullKey
+                    : maskApiKey(currentKey.fullKey || currentKey.partialKey) || 'sk-live_51H8xXxxxxxxx.xxxx'}
+                </span>
+                <button
+                  className="ml-2 p-1 rounded hover:bg-gray-200 transition"
+                  title="Copy"
+                  style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                  disabled
+                >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
               </div>
 
               {/* Security Notice: only show if full key is temporarily present AND not yet revealed */}
