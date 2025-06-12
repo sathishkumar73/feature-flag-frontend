@@ -10,8 +10,6 @@ import {
   copyToClipboard,
   getActionIcon,
   getActionColor,
-  getStatusIcon,
-  getStatusColor,
 } from '@/utils/audit-log-helpers';
 
 interface AuditLogsTableProps {
@@ -47,38 +45,26 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
             <tr className="border-b border-border">
               <th className="text-left p-3 font-medium text-foreground">
                 <button
-                  onClick={() => onSort('timestamp')}
+                  onClick={() => onSort('createdAt')}
                   className="flex items-center gap-1 hover:text-primary transition-colors"
-                  aria-label="Sort by timestamp"
+                  aria-label="Sort by date"
                 >
-                  Timestamp
-                  {sortField === 'timestamp' && (
-                    sortOrder === 'desc' ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />
-                  )}
-                </button>
-              </th>
-              <th className="text-left p-3 font-medium text-foreground">
-                <button
-                  onClick={() => onSort('user')}
-                  className="flex items-center gap-1 hover:text-primary transition-colors"
-                  aria-label="Sort by user"
-                >
-                  User
-                  {sortField === 'user' && (
+                  Date
+                  {sortField === 'createdAt' && (
                     sortOrder === 'desc' ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />
                   )}
                 </button>
               </th>
               <th className="text-left p-3 font-medium text-foreground">Action</th>
               <th className="text-left p-3 font-medium text-foreground">Details</th>
-              <th className="text-left p-3 font-medium text-foreground">Status</th>
+              <th className="text-left p-3 font-medium text-foreground">Performed By</th>
               <th className="text-left p-3 font-medium text-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                <td colSpan={5} className="text-center p-8 text-muted-foreground">
                   No audit logs found matching your criteria.
                 </td>
               </tr>
@@ -95,15 +81,9 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                       onViewDetails(log);
                     }
                   }}
-                  aria-label={`View details for ${log.action} action on ${log.entity} by ${log.user}`}
+                  aria-label={`View details for ${log.action} action by ${log.performedBy?.name}`}
                 >
-                  <td className="p-3 text-sm text-foreground">{formatTimestamp(log.timestamp)}</td>
-                  <td className="p-3">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-foreground">{log.performedById}</div>
-                      <div className="text-xs text-muted-foreground">{log.performedById}</div>
-                    </div>
-                  </td>
+                  <td className="p-3 text-sm text-foreground">{formatTimestamp(log.createdAt)}</td>
                   <td className="p-3">
                     <Badge className={`inline-flex items-center gap-1 ${getActionColor(log.action)}`}>
                       {getActionIcon(log.action)}
@@ -112,9 +92,8 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                   </td>
                   <td className="p-3 text-sm text-foreground max-w-xs truncate">{log.details}</td>
                   <td className="p-3">
-                    <div className={`flex items-center gap-1 text-sm font-medium ${getStatusColor(log.status)}`}>
-                      {getStatusIcon(log.status)}
-                      {log.status}
+                    <div className="text-sm font-medium text-foreground">
+                      {log.performedBy?.name}
                     </div>
                   </td>
                   <td className="p-3">
@@ -124,9 +103,9 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          copyToClipboard(log.entityId, 'Entity ID');
+                          copyToClipboard(log.flagId, 'Flag ID');
                         }}
-                        aria-label="Copy entity ID"
+                        aria-label="Copy flag ID"
                       >
                         <Copy className="h-3 w-3" />
                       </Button>

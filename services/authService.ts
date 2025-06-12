@@ -12,11 +12,11 @@ interface LoginPayload {
 
 class AuthService {
   async signup(payload: SignupPayload) {
-    return apiPost("/auth/signup", payload);
+    return apiPost("/auth/signup", payload as unknown as Record<string, unknown>);
   }
 
   async login(payload: LoginPayload) {
-    return apiPost("/auth/login", payload);
+    return apiPost("/auth/login", payload as unknown as Record<string, unknown>);
   }
 
   // Add more auth-related methods here if needed

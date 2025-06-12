@@ -31,14 +31,14 @@ const ApiKeyHistoryTable: React.FC<ApiKeyHistoryTableProps> = ({ keyHistory }) =
             <TableBody>
               {keyHistory.map((key) => (
                 <TableRow key={key.id}>
-                  <TableCell className="font-mono text-sm">{key.partialKey}</TableCell>
+                  <TableCell className="font-mono text-sm">{key.hashedKey}</TableCell>
                   <TableCell>
-                    <Badge variant={key.status === "active" ? "default" : "secondary"}>
-                      {key.status === "active" ? "Active" : "Revoked"}
+                    <Badge variant={key.isActive ? "default" : "secondary"}>
+                      {key.isActive ? "Active" : "Revoked"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">{formatDate(key.createdAt)}</TableCell>
-                  <TableCell className="text-sm">{key.revokedAt ? formatDate(key.revokedAt) : "-"}</TableCell>
+                  <TableCell className="text-sm">-</TableCell>
                 </TableRow>
               ))}
             </TableBody>

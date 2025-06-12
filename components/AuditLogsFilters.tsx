@@ -5,15 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AuditLogActionFilter, AuditLogStatusFilter } from '@/components/types/audit-log';
+import { AuditLogActionFilter } from '@/components/types/audit-log';
 
 interface AuditLogsFiltersProps {
   searchTerm: string;
   onSearchTermChange: (term: string) => void;
   actionFilter: AuditLogActionFilter;
   onActionFilterChange: (action: AuditLogActionFilter) => void;
-  statusFilter: AuditLogStatusFilter;
-  onStatusFilterChange: (status: AuditLogStatusFilter) => void;
   onExportCSV: () => void;
   totalFilteredLogsCount: number; // To show count before export
 }
@@ -23,8 +21,6 @@ const AuditLogsFilters: React.FC<AuditLogsFiltersProps> = ({
   onSearchTermChange,
   actionFilter,
   onActionFilterChange,
-  statusFilter,
-  onStatusFilterChange,
   onExportCSV,
   totalFilteredLogsCount
 }) => {
@@ -69,23 +65,6 @@ const AuditLogsFilters: React.FC<AuditLogsFiltersProps> = ({
                 <SelectItem value="Create">Create</SelectItem>
                 <SelectItem value="Update">Update</SelectItem>
                 <SelectItem value="Delete">Delete</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="space-y-2">
-            <label htmlFor="status-filter" className="text-sm font-medium text-foreground">
-              Status
-            </label>
-            <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-              <SelectTrigger id="status-filter" className="w-full">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Success">Success</SelectItem>
-                <SelectItem value="Failure">Failure</SelectItem>
               </SelectContent>
             </Select>
           </div>

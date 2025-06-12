@@ -20,5 +20,5 @@ export interface AuditLogCreateRequest {
 }
 
 export type AuditLogActionFilter = 'all' | AuditLog['action'];
-export type AuditLogSortField = 'timestamp' | 'user';
+export type AuditLogSortField = 'createdAt' | 'action';
 export type AuditLogSortOrder = 'asc' | 'desc';

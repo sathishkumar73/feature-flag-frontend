@@ -200,7 +200,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     }
     setIsCreatingFlag(true);
     try {
-      const newFlag = await apiPost<FeatureFlag>("/flags", newFlagData);
+      const newFlag = await apiPost<FeatureFlag>("/flags", newFlagData as unknown as Record<string, unknown>);
       setFlags(prevFlags => [...prevFlags, newFlag]);
       toast.success(`Feature flag "${newFlag.name}" has been created successfully.`);
       fetchFlags();

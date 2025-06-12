@@ -22,7 +22,6 @@ const AuditLogsPage = () => {
   const {
     searchTerm, setSearchTerm,
     actionFilter, setActionFilter,
-    statusFilter, setStatusFilter,
     sortField, sortOrder, handleSort,
     paginatedLogs, filteredAndSortedLogs, // Keep filteredAndSortedLogs for export
     currentPage, totalPages, goToNextPage, goToPreviousPage,
@@ -65,8 +64,6 @@ const AuditLogsPage = () => {
         onSearchTermChange={setSearchTerm}
         actionFilter={actionFilter}
         onActionFilterChange={setActionFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
         onExportCSV={handleOpenExportConfirm} // Use the new handler here
         totalFilteredLogsCount={filteredAndSortedLogs.length}
       />

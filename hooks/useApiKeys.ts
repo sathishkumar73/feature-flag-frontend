@@ -5,7 +5,7 @@ import { SESSION_KEY_SEEN_FLAG_PREFIX } from "@/components/types/api-key.helpers
 import { supabase } from "@/lib/supabaseClient";
 import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
 
-type ApiKeyWithFullKey = ApiKey & { fullKey?: string };
+export type ApiKeyWithFullKey = ApiKey & { fullKey?: string };
 
 export const useApiKeys = () => {
   const [currentKey, setCurrentKey] = useState<ApiKeyWithFullKey | null>(null);

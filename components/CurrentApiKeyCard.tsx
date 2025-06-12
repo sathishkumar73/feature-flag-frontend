@@ -4,12 +4,12 @@ import { Eye, Trash2, Key, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ApiKey } from '@/components/types/api-key';
 import { formatDate } from '@/components/types/api-key.helpers';
 import GenerateKeyConfirmDialog from '@/components/GenerateKeyConfirmDialog';
+import type { ApiKeyWithFullKey } from '@/hooks/useApiKeys';
 
 interface CurrentApiKeyCardProps {
-  currentKey: ApiKey | null;
+  currentKey: ApiKeyWithFullKey | null;
   isGenerating: boolean;
   isCurrentKeyRevealed: boolean;
   onGenerateNewKey: () => void;
@@ -82,7 +82,7 @@ const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
                 <span>
                   {isCurrentKeyRevealed && currentKey.fullKey
                     ? currentKey.fullKey
-                    : maskApiKey(currentKey.fullKey || currentKey.partialKey) || 'sk-live_51H8xXxxxxxxx.xxxx'}
+                    : maskApiKey(currentKey.fullKey || currentKey.hashedKey) || 'sk-live_51H8xXxxxxxxx.xxxx'}
                 </span>
                 <button
                   className="ml-2 p-1 rounded hover:bg-gray-200 transition"
