@@ -74,7 +74,7 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
         throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
       }
       const data = await apiGet<AuditLog[]>("/audit-logs", queryParams);
-      setLogs(data);
+      setLogs(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unexpected error occurred while fetching audit logs.');
       console.error('Error fetching audit logs:', error);

@@ -137,7 +137,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
         throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
       }
       const data = await apiGet<FeatureFlag[]>("/flags", queryParams);
-      setFlags(data);
+      setFlags(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unexpected error occurred while fetching flags.');
       console.error('Error fetching flags:', error);
