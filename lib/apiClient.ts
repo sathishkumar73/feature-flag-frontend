@@ -26,39 +26,99 @@ function parseErrorResponse(res: Response, body: string): Error {
   return new Error(body || `HTTP error ${res.status}`);
 }
 
-export async function apiGet<T>(endpoint: string, params: Record<string, unknown> = {}) {
+// --- Interceptor Types ---
+type RequestInterceptor = (input: RequestInfo, init: RequestInit) => Promise<{ input: RequestInfo; init: RequestInit }> | { input: RequestInfo; init: RequestInit };
+type ResponseInterceptor = (response: Response) => Promise<Response> | Response;
+
+const requestInterceptors: RequestInterceptor[] = [];
+const responseInterceptors: ResponseInterceptor[] = [];
+
+export function addRequestInterceptor(interceptor: RequestInterceptor) {
+  requestInterceptors.push(interceptor);
+}
+export function addResponseInterceptor(interceptor: ResponseInterceptor) {
+  responseInterceptors.push(interceptor);
+}
+
+// --- Internal fetch with interceptors and abort support ---
+async function interceptedFetch(input: RequestInfo, init: RequestInit): Promise<Response> {
+  let req = { input, init };
+  console.log(requestInterceptors)
+  for (const interceptor of requestInterceptors) {
+    req = await interceptor(req.input, req.init);
+  }
+  let res = await fetch(req.input, req.init);
+  for (const interceptor of responseInterceptors) {
+    res = await interceptor(res);
+  }
+  return res;
+}
+
+// --- API Methods ---
+export async function apiGet<T>(endpoint: string, params: Record<string, unknown> = {}, options?: { signal?: AbortSignal }) {
   const query = new URLSearchParams(params as Record<string, string>).toString();
   const url = query ? `${API_BASE_URL}${endpoint}?${query}` : `${API_BASE_URL}${endpoint}`;
-  const res = await fetch(url, { headers: await getHeaders() });
+  const headers = await getHeaders();
+  const res = await interceptedFetch(url, { headers, signal: options?.signal });
   if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
 
-export async function apiPost<T>(endpoint: string, data: Record<string, unknown>) {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+export async function apiPost<T>(endpoint: string, data: Record<string, unknown>, options?: { signal?: AbortSignal }) {
+  const headers = await getHeaders();
+  const res = await interceptedFetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
-    headers: await getHeaders(),
+    headers,
     body: JSON.stringify(data),
+    signal: options?.signal,
   });
   if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
 
-export async function apiPut<T>(endpoint: string, data: Record<string, unknown>) {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+export async function apiPut<T>(endpoint: string, data: Record<string, unknown>, options?: { signal?: AbortSignal }) {
+  const headers = await getHeaders();
+  const res = await interceptedFetch(`${API_BASE_URL}${endpoint}`, {
     method: "PUT",
-    headers: await getHeaders(),
+    headers,
     body: JSON.stringify(data),
+    signal: options?.signal,
   });
   if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
 
-export async function apiDelete<T>(endpoint: string) {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+export async function apiDelete<T>(endpoint: string, options?: { signal?: AbortSignal }) {
+  const headers = await getHeaders();
+  const res = await interceptedFetch(`${API_BASE_URL}${endpoint}`, {
     method: "DELETE",
-    headers: await getHeaders(),
+    headers,
+    signal: options?.signal,
   });
   if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
+
+addRequestInterceptor(async (input, init) => {
+  const url = typeof input === "string" ? input : input.url;
+  if (
+    url.includes("/flags") ||
+    url.includes("/audit-logs") ||
+    url.includes("/api-keys")
+  ) {
+    console.log(`[API Request] ${init.method || "GET"} ${url}`);
+  }
+  return { input, init };
+});
+
+// Response interceptor: log status for relevant API calls
+addResponseInterceptor(async (response) => {
+  if (
+    response.url.includes("/flags") ||
+    response.url.includes("/audit-logs") ||
+    response.url.includes("/api-keys")
+  ) {
+    console.log(`[API Response] ${response.status} ${response.url}`);
+  }
+  return response;
+});
