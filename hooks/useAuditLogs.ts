@@ -52,23 +52,6 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
     };
 
     getAuthToken(); // Initial call on mount
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setUserAccessToken(session?.access_token || null);
-          setError(null);
-        } else if (event === 'SIGNED_OUT') {
-          setUserAccessToken(null);
-          setLogs([]); // Clear logs on sign out
-          setError("You have been signed out.");
-        }
-      }
-    );
-
-    return () => {
-      authListener?.subscription.unsubscribe(); // Cleanup listener
-    };
   }, []); // Runs only once on component mount
 
   // --- Data Fetching (GET Request) ---

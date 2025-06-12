@@ -108,23 +108,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
 
     getAuthToken(); // Initial call on mount
 
-    // Listen for real-time auth state changes (e.g., token refresh, logout)
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setUserAccessToken(session?.access_token || null);
-          setError(null); // Clear any previous auth errors
-        } else if (event === 'SIGNED_OUT') {
-          setUserAccessToken(null);
-          setFlags([]); // Clear flags on sign out
-          setError("You have been signed out.");
-        }
-      }
-    );
 
-    return () => {
-      authListener?.subscription.unsubscribe(); // Cleanup listener
-    };
   }, []); // Runs only once on component mount
 
   // --- Data Fetching (GET /flags) ---
