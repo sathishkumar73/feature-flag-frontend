@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Session } from '@supabase/supabase-js';
 import AuthListener from '@/components/auth/AuthListener';
+import { useSessionRedirect } from "@/hooks/useSessionRedirect";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -42,28 +43,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const isAuthRoute = pathname?.startsWith("/auth");
-
   const segments = pathname.split("/").filter(Boolean);
 
+  // Use modular session/redirect logic
+  useSessionRedirect();
+
   useEffect(() => {
-    let winPath = '';
-    if (typeof window !== 'undefined') {
-      winPath = window.location.pathname;
-      try {
-        localStorage.getItem('sb-cdfhghmnbrmqjpoxqpit-auth-token');
-      } catch {
-        // do nothing
-      }
-    }
-    if (!pathname || !winPath) {
-      return;
-    }
     if (!isAuthRoute) {
       supabase.auth.getSession().then((result) => {
         const { data: { session } } = result;
-        if (!session) {
-          router.replace("/auth/login");
-        } else {
+        if (session) {
           setSession(session);
         }
         setLoading(false);
@@ -73,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     } else {
       setLoading(false);
     }
-  }, [isAuthRoute, router, pathname]);
+  }, [isAuthRoute, pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
