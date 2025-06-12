@@ -7,19 +7,14 @@ import { apiGet } from "@/lib/apiClient";
 
 import {
   AuditLog,
-  AuditLogActionFilter,
-  AuditLogStatusFilter,
-  AuditLogSortField,
-  AuditLogSortOrder,
 } from '@/components/types/audit-log'; // Assuming these types are correctly defined here
 
 export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
   const [logs, setLogs] = useState<AuditLog[]>([]); // This will now be populated by the API call
   const [searchTerm, setSearchTerm] = useState('');
-  const [actionFilter, setActionFilter] = useState<AuditLogActionFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<AuditLogStatusFilter>('all');
-  const [sortField, setSortField] = useState<AuditLogSortField>('timestamp');
-  const [sortOrder, setSortOrder] = useState<AuditLogSortOrder>('desc');
+  const [actionFilter, setActionFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<'createdAt' | 'action'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
 
   // --- Loading, Error, and Auth States ---
@@ -43,9 +38,10 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
           throw new Error("No active Supabase session found. Please ensure you are logged in.");
         }
         setUserAccessToken(session.access_token);
-      } catch (err: any) {
-        console.error('Supabase Auth Error:', err);
-        setError(err.message || "Failed to authenticate with Supabase. Please refresh or log in.");
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Failed to authenticate with Supabase. Please refresh or log in.');
+        console.error('Supabase Auth Error:', error);
+        setError(error.message);
         setUserAccessToken(null);
       } finally {
         setIsAuthLoading(false);
@@ -72,17 +68,17 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
         page: String(currentPage),
         limit: String(logsPerPage),
         action: actionFilter === 'all' ? '' : actionFilter,
-        status: statusFilter === 'all' ? '' : statusFilter,
         searchTerm: searchTerm,
       };
       if (!backendUrl) {
         throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
       }
-      const data = await apiGet<any>("/audit-logs", queryParams);
-      setLogs(data.data || data);
-    } catch (err: any) {
-      console.error('Error fetching audit logs:', err);
-      setError(err.message || "An unexpected error occurred while fetching audit logs.");
+      const data = await apiGet<AuditLog[]>("/audit-logs", queryParams);
+      setLogs(data);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('An unexpected error occurred while fetching audit logs.');
+      console.error('Error fetching audit logs:', error);
+      setError(error.message);
       setLogs([]);
     } finally {
       setIsLoadingLogs(false);
@@ -96,7 +92,6 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
     currentPage,
     logsPerPage,
     actionFilter,
-    statusFilter,
     searchTerm // Include all dependencies that would cause a re-fetch
   ]);
 
@@ -117,30 +112,27 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
     currentLogs = currentLogs.filter(log => {
       const matchesSearch =
         searchTerm === '' ||
-        log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.userEmail.toLowerCase().includes(searchTerm.toLowerCase());
+        (log.performedBy && log.performedBy.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        log.flagName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (log.details ? log.details.toLowerCase().includes(searchTerm.toLowerCase()) : false);
 
       const matchesAction = actionFilter === 'all' || log.action === actionFilter;
-      const matchesStatus = statusFilter === 'all' || log.status === statusFilter;
-
-      return matchesSearch && matchesAction && matchesStatus;
+      return matchesSearch && matchesAction;
     });
 
     // Apply client-side sorting if backend doesn't return sorted data
     currentLogs.sort((a, b) => {
       let comparison = 0;
-      if (sortField === 'timestamp') {
-        comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-      } else if (sortField === 'user') {
-        comparison = a.user.localeCompare(b.user);
+      if (sortField === 'createdAt') {
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortField === 'action') {
+        comparison = a.action.localeCompare(b.action);
       }
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
     return currentLogs;
-  }, [logs, searchTerm, actionFilter, statusFilter, sortField, sortOrder]);
+  }, [logs, searchTerm, actionFilter, sortField, sortOrder]);
 
   // Memoized pagination logic (client-side, if not fully done by backend)
   const totalPages = Math.ceil(filteredAndSortedLogs.length / logsPerPage);
@@ -158,7 +150,7 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
   }, [filteredAndSortedLogs, currentPage, logsPerPage, totalPages]); // Added totalPages as dependency
 
   // Handler for sorting
-  const handleSort = useCallback((field: AuditLogSortField) => {
+  const handleSort = useCallback((field: 'createdAt' | 'action') => {
     if (sortField === field) {
       setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
@@ -180,7 +172,6 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
   return {
     searchTerm, setSearchTerm,
     actionFilter, setActionFilter,
-    statusFilter, setStatusFilter,
     sortField, sortOrder, handleSort,
     paginatedLogs,
     filteredAndSortedLogs, // Export this for the CSV export function
