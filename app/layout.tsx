@@ -46,48 +46,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const segments = pathname.split("/").filter(Boolean);
 
   useEffect(() => {
-    console.log('[DEBUG] Pathname:', pathname, 'AuthRoute:', isAuthRoute);
     let winPath = '';
     if (typeof window !== 'undefined') {
       winPath = window.location.pathname;
-      console.log('[DEBUG] window.location.pathname:', winPath);
-      // Log cookies for debugging session/cookie issues
-      console.log('[DEBUG] document.cookie:', document.cookie);
-      // Log user agent and platform
-      console.log('[DEBUG] navigator.userAgent:', navigator.userAgent);
-      console.log('[DEBUG] navigator.platform:', navigator.platform);
-      // Log localStorage and sessionStorage keys
       try {
-        console.log('[DEBUG] localStorage keys:', Object.keys(localStorage));
-        console.log('[DEBUG] sessionStorage keys:', Object.keys(sessionStorage));
-        // Log the actual Supabase auth token value
-        const sbToken = localStorage.getItem('sb-cdfhghmnbrmqjpoxqpit-auth-token');
-        console.log('[DEBUG] sb-cdfhghmnbrmqjpoxqpit-auth-token:', sbToken);
-      } catch (e) {
-        console.log('[DEBUG] localStorage/sessionStorage not available:', e);
+        localStorage.getItem('sb-cdfhghmnbrmqjpoxqpit-auth-token');
+      } catch {
+        // do nothing
       }
     }
     if (!pathname || !winPath) {
-      console.log('[DEBUG] Pathname or window.location.pathname is empty, skipping session check.');
       return;
     }
     if (!isAuthRoute) {
       supabase.auth.getSession().then((result) => {
-        console.log('[DEBUG] supabase.auth.getSession FULL result:', result);
-        const { data: { session }, error } = result;
-        console.log('[DEBUG] supabase.auth.getSession result:', { session, error });
-        if (error) {
-          console.error('[DEBUG] supabase.auth.getSession error:', error);
-        }
+        const { data: { session } } = result;
         if (!session) {
-          console.log('[DEBUG] No session found, redirecting to /auth/login');
           router.replace("/auth/login");
         } else {
           setSession(session);
         }
         setLoading(false);
-      }).catch((err) => {
-        console.error('[DEBUG] Error in supabase.auth.getSession:', err);
+      }).catch(() => {
         setLoading(false);
       });
     } else {
