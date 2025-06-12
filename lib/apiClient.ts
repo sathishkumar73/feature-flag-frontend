@@ -9,7 +9,7 @@ export async function getHeaders(additionalHeaders: Record<string, string> = {})
   return headers;
 }
 
-function parseErrorResponse(res: Response, body: string): Error {
+export function parseErrorResponse(res: Response, body: string): Error {
   try {
     const json = JSON.parse(body);
     if (json && typeof json.error === 'string') {
@@ -122,3 +122,4 @@ addResponseInterceptor(async (response) => {
   }
   return response;
 });
+
