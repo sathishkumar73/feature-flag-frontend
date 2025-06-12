@@ -2,8 +2,6 @@
 // Place this file in your project as needed (e.g., docs/apiClient-usage-examples.ts)
 
 import {
-  apiGet,
-  apiPost,
   addRequestInterceptor,
   addResponseInterceptor,
 } from "@/lib/apiClient";
@@ -36,22 +34,22 @@ addResponseInterceptor(async (response) => {
 // });
 
 // --- Example 3: Aborting a Request ---
-async function fetchWithAbort() {
-  const controller = new AbortController();
-  const promise = apiGet("/flags", {}, { signal: controller.signal });
-  // To cancel the request:
-  // controller.abort();
-  try {
-    const data = await promise;
-    console.log("Flags:", data);
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "AbortError") {
-      console.log("Request was aborted");
-    } else {
-      console.error("API error:", err);
-    }
-  }
-}
+// async function fetchWithAbort() {
+//   const controller = new AbortController();
+//   const promise = apiGet("/flags", {}, { signal: controller.signal });
+//   // To cancel the request:
+//   // controller.abort();
+//   try {
+//     const data = await promise;
+//     console.log("Flags:", data);
+//   } catch (err) {
+//     if (err instanceof DOMException && err.name === "AbortError") {
+//       console.log("Request was aborted");
+//     } else {
+//       console.error("API error:", err);
+//     }
+//   }
+// }
 
 // --- Example 4: Using abort in a React hook (pattern) ---
 // useEffect(() => {
