@@ -47,9 +47,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     console.log('[DEBUG] Pathname:', pathname, 'isAuthRoute:', isAuthRoute);
+    if (typeof window !== 'undefined') {
+      console.log('[DEBUG] window.location.pathname:', window.location.pathname);
+      // Log cookies for debugging session/cookie issues
+      console.log('[DEBUG] document.cookie:', document.cookie);
+    }
+    if (!pathname) {
+      console.log('[DEBUG] Pathname is empty, skipping session check.');
+      return;
+    }
     if (!isAuthRoute) {
       supabase.auth.getSession().then(({ data: { session }, error }) => {
         console.log('[DEBUG] supabase.auth.getSession result:', { session, error });
+        if (error) {
+          console.error('[DEBUG] supabase.auth.getSession error:', error);
+        }
         if (!session) {
           console.log('[DEBUG] No session found, redirecting to /auth/login');
           router.replace("/auth/login");
