@@ -46,13 +46,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const segments = pathname.split("/").filter(Boolean);
 
   useEffect(() => {
-    console.log('[DEBUG] Pathname:', pathname, 'isAuthRoute:', isAuthRoute);
+    console.log('[DEBUG] Pathname:', pathname, 'AuthRoute:', isAuthRoute);
     let winPath = '';
     if (typeof window !== 'undefined') {
       winPath = window.location.pathname;
       console.log('[DEBUG] window.location.pathname:', winPath);
       // Log cookies for debugging session/cookie issues
       console.log('[DEBUG] document.cookie:', document.cookie);
+      // Log user agent and platform
+      console.log('[DEBUG] navigator.userAgent:', navigator.userAgent);
+      console.log('[DEBUG] navigator.platform:', navigator.platform);
+      // Log localStorage and sessionStorage keys
+      try {
+        console.log('[DEBUG] localStorage keys:', Object.keys(localStorage));
+        console.log('[DEBUG] sessionStorage keys:', Object.keys(sessionStorage));
+      } catch (e) {
+        console.log('[DEBUG] localStorage/sessionStorage not available:', e);
+      }
     }
     if (!pathname || !winPath) {
       console.log('[DEBUG] Pathname or window.location.pathname is empty, skipping session check.');
