@@ -14,7 +14,7 @@ export const formatDate = (dateString: string): string => {
   });
 };
 
-export const exportFlagsToCSV = (flags: FeatureFlag[], toast: any) => {
+export const exportFlagsToCSV = (flags: FeatureFlag[], toast: { success: (msg: string) => void; error?: (msg: string) => void }) => {
   const csvContent = [
     ['Name', 'Description', 'Environment', 'Enabled', 'Rollout %', 'Created At'].join(','),
     ...flags.map(flag => [
