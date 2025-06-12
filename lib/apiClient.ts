@@ -9,11 +9,28 @@ export async function getHeaders(additionalHeaders: Record<string, string> = {})
   return headers;
 }
 
+function parseErrorResponse(res: Response, body: string): Error {
+  try {
+    const json = JSON.parse(body);
+    if (json && typeof json.error === 'string') {
+      const err = new Error(json.error);
+      // @ts-expect-error: attach status if present
+      if (json.status) err.status = json.status;
+      return err;
+    }
+    // fallback: show first string property if present
+    for (const key in json) {
+      if (typeof json[key] === 'string') return new Error(json[key]);
+    }
+  } catch {}
+  return new Error(body || `HTTP error ${res.status}`);
+}
+
 export async function apiGet<T>(endpoint: string, params: Record<string, unknown> = {}) {
   const query = new URLSearchParams(params as Record<string, string>).toString();
   const url = query ? `${API_BASE_URL}${endpoint}?${query}` : `${API_BASE_URL}${endpoint}`;
   const res = await fetch(url, { headers: await getHeaders() });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
 
@@ -23,7 +40,7 @@ export async function apiPost<T>(endpoint: string, data: Record<string, unknown>
     headers: await getHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
 
@@ -33,7 +50,7 @@ export async function apiPut<T>(endpoint: string, data: Record<string, unknown>)
     headers: await getHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }
 
@@ -42,6 +59,6 @@ export async function apiDelete<T>(endpoint: string) {
     method: "DELETE",
     headers: await getHeaders(),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw parseErrorResponse(res, await res.text());
   return res.json() as Promise<T>;
 }

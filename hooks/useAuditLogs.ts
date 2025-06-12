@@ -79,6 +79,7 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
       const error = err instanceof Error ? err : new Error('An unexpected error occurred while fetching audit logs.');
       console.error('Error fetching audit logs:', error);
       setError(error.message);
+      toast.error(error.message || "An unexpected error occurred while fetching audit logs.");
       setLogs([]);
     } finally {
       setIsLoadingLogs(false);

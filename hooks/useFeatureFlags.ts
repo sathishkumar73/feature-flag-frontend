@@ -208,7 +208,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unexpected error occurred while creating the flag.');
       console.error('Error creating feature flag:', error);
-      toast.error(error.message);
+      toast.error(error.message || "An error occurred while creating the flag.");
       return null;
     } finally {
       setIsCreatingFlag(false);
@@ -234,7 +234,7 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(`Failed to toggle flag "${flag.name}". Reverting...`);
       console.error('Error toggling flag:', error);
-      toast.error(error.message);
+      toast.error(error.message || `Failed to toggle flag "${flag.name}". Reverting...`);
       setFlags(prevFlags =>
         prevFlags.map(f =>
           f.id === flag.id ? { ...f, enabled: originalEnabledState } : f

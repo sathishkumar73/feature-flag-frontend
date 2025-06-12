@@ -63,7 +63,7 @@ export const useApiKeys = () => {
         }
         setKeyHistory(data.history || []);
       } catch (error: unknown) {
-        toast.error("Failed to load API key data.");
+        toast.error(error instanceof Error ? error.message : "Failed to load API key data.");
         setCurrentKey(null);
         setKeyHistory([]);
       } finally {
@@ -134,7 +134,7 @@ export const useApiKeys = () => {
           "Your new API key has been generated successfully. Make sure to copy it now - you won't be able to see it again!",
       });
     } catch (error: unknown) {
-      toast.error("Failed to generate new API key.");
+      toast.error(error instanceof Error ? error.message : "Failed to generate new API key.");
     } finally {
       setIsGenerating(false);
     }
@@ -161,8 +161,8 @@ export const useApiKeys = () => {
         `${SESSION_KEY_SEEN_FLAG_PREFIX}${String(currentKey.id)}`
       );
       toast.success("API Key Revoked");
-    } catch {
-      toast.error("Failed to revoke API key.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to revoke API key.");
     }
   }, [accessToken, currentKey]);
 
