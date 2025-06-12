@@ -11,6 +11,9 @@ const OAuthButtons: React.FC = () => {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/flags`,
+        queryParams: {
+          prompt: 'consent',
+        },
       },
     });
 
@@ -26,6 +29,10 @@ const OAuthButtons: React.FC = () => {
       provider: 'github',
       options: {
         redirectTo: `${window.location.origin}/flags`,
+        queryParams: {
+          scope: 'read:user,user:email',
+          allow_signup: 'true',
+        },
       },
     });
 
