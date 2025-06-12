@@ -1,7 +1,7 @@
 "use client";
 import { AuditLog } from '@/components/types/audit-log';
 import { toast } from 'sonner';
-import { Plus, Edit3, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit3, Trash2 } from 'lucide-react';
 import React from 'react';
 
 export const formatTimestamp = (timestamp: string): string => {
@@ -24,18 +24,16 @@ export const copyToClipboard = async (text: string, label: string) => {
   }
 };
 
-export const exportAuditLogsToCSV = (logs: AuditLog[], toast: any) => {
+export const exportAuditLogsToCSV = (logs: AuditLog[], toast: { success: (msg: string) => void; error?: (msg: string) => void }) => {
   const csvContent = [
-    'Timestamp,User,User Email,Action,Entity,Entity ID,Details,Status',
+    'Created At,Action,Flag Name,Flag ID,Details,Performed By',
     ...logs.map(log =>
-      `"${log.timestamp}",` +
-      `"${log.user.replace(/"/g, '""')}",` +
-      `"${log.userEmail}",` +
+      `"${log.createdAt}",` +
       `"${log.action}",` +
-      `"${log.entity.replace(/"/g, '""')}",` +
-      `"${log.entityId}",` +
-      `"${log.details.replace(/"/g, '""')}",` +
-      `"${log.status}"`
+      `"${log.flagName.replace(/"/g, '""')}",` +
+      `"${log.flagId}",` +
+      `"${(log.details ?? '').replace(/"/g, '""')}",` +
+      `"${log.performedBy?.name ?? ''}"`
     )
   ].join('\n');
 
@@ -69,13 +67,3 @@ export const getActionColor = (action: AuditLog['action']): string => {
     default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
   }
 };
-
-export const getStatusIcon = (status: AuditLog['status']): React.ReactNode => {
-  return status === 'Success' ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />;
-};
-
-export const getStatusColor = (status: AuditLog['status']): string => {
-  return status === 'Success'
-    ? 'text-green-600 dark:text-green-400'
-    : 'text-red-600 dark:text-red-400';
-}; 
