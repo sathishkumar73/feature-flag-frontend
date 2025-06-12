@@ -98,9 +98,10 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
           throw new Error("No active Supabase session found. Please ensure you are logged in.");
         }
         setUserAccessToken(session.access_token);
-      } catch (err: any) {
-        console.error('Supabase Auth Error:', err);
-        setError(err.message || "Failed to authenticate with Supabase. Please refresh or log in.");
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Supabase Auth Error');
+        console.error('Supabase Auth Error:', error);
+        setError(error.message || "Failed to authenticate with Supabase. Please refresh or log in.");
         setUserAccessToken(null);
       } finally {
         setIsAuthLoading(false);
@@ -135,11 +136,12 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
       if (!backendUrl) {
         throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
       }
-      const data = await apiGet<any>("/flags", queryParams);
-      setFlags(data.data || data);
-    } catch (err: any) {
-      console.error('Error fetching flags:', err);
-      setError(err.message || "An unexpected error occurred while fetching flags.");
+      const data = await apiGet<FeatureFlag[]>("/flags", queryParams);
+      setFlags(data);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('An unexpected error occurred while fetching flags.');
+      console.error('Error fetching flags:', error);
+      setError(error.message);
       setFlags([]);
     } finally {
       setIsLoadingFlags(false);
@@ -203,9 +205,10 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
       toast.success(`Feature flag "${newFlag.name}" has been created successfully.`);
       fetchFlags();
       return newFlag;
-    } catch (err: any) {
-      console.error('Error creating feature flag:', err);
-      toast.error(err.message || "An unexpected error occurred while creating the flag.");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('An unexpected error occurred while creating the flag.');
+      console.error('Error creating feature flag:', error);
+      toast.error(error.message);
       return null;
     } finally {
       setIsCreatingFlag(false);
@@ -228,9 +231,10 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     try {
       await apiPut(`/flags/${flag.id}`, { enabled: !originalEnabledState });
       toast.success(`Feature flag "${flag.name}" has been ${!originalEnabledState ? 'enabled' : 'disabled'}.`);
-    } catch (err: any) {
-      console.error('Error toggling flag:', err);
-      toast.error(err.message || `Failed to toggle flag "${flag.name}". Reverting...`);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(`Failed to toggle flag "${flag.name}". Reverting...`);
+      console.error('Error toggling flag:', error);
+      toast.error(error.message);
       setFlags(prevFlags =>
         prevFlags.map(f =>
           f.id === flag.id ? { ...f, enabled: originalEnabledState } : f
