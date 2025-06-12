@@ -1,5 +1,5 @@
 // services/flagService.ts
-import { BaseService } from "./baseService";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/apiClient";
 import { FeatureFlag } from "@/components/types/flag";
 
 interface FlagData {
@@ -17,7 +17,7 @@ interface FlagsResponse {
   };
 }
 
-class FlagService extends BaseService {
+class FlagService {
   async fetchFlags(
     page = 1,
     limit = 10,
@@ -32,25 +32,25 @@ class FlagService extends BaseService {
       sort: sortField,
       order: sortDirection,
     };
-    return this.get("/flags", params);
+    return apiGet("/flags", params);
   }
 
   async createFlag(data: FlagData) {
-    return this.post("/flags", {
+    return apiPost("/flags", {
       ...data,
       rolloutPercentage: data.rolloutPercentage ?? 0,
     });
   }
 
   async updateFlag(id: string, data: FlagData) {
-    return this.put(`/flags/${id}`, {
+    return apiPut(`/flags/${id}`, {
       ...data,
       rolloutPercentage: data.rolloutPercentage ?? 0,
     });
   }
 
   async deleteFlag(id: string) {
-    return this.delete(`/flags/${id}`);
+    return apiDelete(`/flags/${id}`);
   }
 }
 

@@ -1,4 +1,4 @@
-import { BaseService } from "./baseService";
+import { apiPost } from "@/lib/apiClient";
 
 interface SignupPayload {
   email: string;
@@ -10,13 +10,13 @@ interface LoginPayload {
   password: string;
 }
 
-class AuthService extends BaseService {
+class AuthService {
   async signup(payload: SignupPayload) {
-    return this.post("/auth/signup", payload);
+    return apiPost("/auth/signup", payload);
   }
 
   async login(payload: LoginPayload) {
-    return this.post("/auth/login", payload);
+    return apiPost("/auth/login", payload);
   }
 
   // Add more auth-related methods here if needed

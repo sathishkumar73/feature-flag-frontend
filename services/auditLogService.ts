@@ -1,4 +1,4 @@
-import { BaseService } from "@/services/baseService";
+import { apiGet } from "@/lib/apiClient";
 import { AuditLog } from "@/components/types/audit-log";
 
 interface AuditLogsResponse {
@@ -8,15 +8,14 @@ interface AuditLogsResponse {
   };
 }
 
-class AuditLogService extends BaseService {
+class AuditLogService {
   async fetchAuditLogs(flagId?: string, page = 1, limit = 10): Promise<AuditLogsResponse> {
     const params = {
       page,
       limit,
       ...(flagId && { flagId }),
     };
-
-    return this.get("/audit-logs", params);
+    return apiGet("/audit-logs", params);
   }
 }
 
