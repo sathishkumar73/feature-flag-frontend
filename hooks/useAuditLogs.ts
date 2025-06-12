@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/lib/supabaseClient';
+import { apiGet } from "@/lib/apiClient";
 
 import {
   AuditLog,
@@ -62,48 +63,27 @@ export const useAuditLogs = (logsPerPage: number = 10, backendUrl: string) => {
       }
       return;
     }
-
     setIsLoadingLogs(true);
     setError(null);
-
     try {
-      // You can add query parameters here if your backend supports server-side filtering/sorting/pagination
-      const queryParams = new URLSearchParams({
-        // Example: If your backend needs current sort/order
+      const queryParams = {
         sortField: sortField,
         sortOrder: sortOrder,
-        // Example: If your backend supports pagination
         page: String(currentPage),
         limit: String(logsPerPage),
-        // Example: If your backend supports filtering by action/status/search
         action: actionFilter === 'all' ? '' : actionFilter,
         status: statusFilter === 'all' ? '' : statusFilter,
         searchTerm: searchTerm,
-      }).toString();
-
+      };
       if (!backendUrl) {
-          throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
+        throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
       }
-
-      const response = await fetch(`${backendUrl}/audit-logs?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${userAccessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch audit logs: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      // Assuming your backend returns an array of AuditLog directly, or an object like { data: AuditLog[] }
-      setLogs(data.data || data); // Adjust based on your actual API response structure
-
+      const data = await apiGet<any>("/audit-logs", queryParams);
+      setLogs(data.data || data);
     } catch (err: any) {
       console.error('Error fetching audit logs:', err);
       setError(err.message || "An unexpected error occurred while fetching audit logs.");
-      setLogs([]); // Clear logs on error
+      setLogs([]);
     } finally {
       setIsLoadingLogs(false);
     }

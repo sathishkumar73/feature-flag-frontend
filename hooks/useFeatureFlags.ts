@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/lib/supabaseClient'; // Adjust this path as needed
+import { apiGet, apiPost, apiPut } from "@/lib/apiClient";
 
 // Assuming these types are defined in '@/types/flag'
 import { FeatureFlag, SortField, SortDirection } from '@/types/flag';
@@ -113,59 +114,37 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
 
   // --- Data Fetching (GET /flags) ---
   const fetchFlags = useCallback(async () => {
-    // Prevent fetching if authentication is still loading or token is not available
     if (!userAccessToken) {
-      if (!isAuthLoading) { // If auth loading is done but no token, set error
+      if (!isAuthLoading) {
         setError("Authentication required to fetch flags.");
       }
       return;
     }
-
     setIsLoadingFlags(true);
-    setError(null); // Clear previous errors
-
+    setError(null);
     try {
-      // Construct query parameters for server-side filtering/sorting if your backend supports it
-      const queryParams = new URLSearchParams({
+      const queryParams = {
         sort: sortField,
         order: sortDirection,
-        // You might add these for server-side filtering/search/pagination
         // environment: environmentFilter,
         // status: statusFilter,
         // searchTerm: searchTerm,
         // page: String(currentPage),
         // limit: String(itemsPerPage),
-      }).toString();
-
+      };
       if (!backendUrl) {
-          throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
+        throw new Error("Backend URL is not configured. Please check NEXT_PUBLIC_API_URL.");
       }
-
-      const response = await fetch(`${backendUrl}/flags?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${userAccessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch flags: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      // Adjust based on your backend response structure.
-      // If backend returns { data: FeatureFlag[], total: number }, use data.data.
-      // Otherwise, assume it's just an array of flags.
+      const data = await apiGet<any>("/flags", queryParams);
       setFlags(data.data || data);
-
     } catch (err: any) {
       console.error('Error fetching flags:', err);
       setError(err.message || "An unexpected error occurred while fetching flags.");
-      setFlags([]); // Clear flags on error
+      setFlags([]);
     } finally {
       setIsLoadingFlags(false);
     }
-  }, [backendUrl, userAccessToken, sortField, sortDirection, isAuthLoading]); // Dependencies for useCallback
+  }, [backendUrl, userAccessToken, sortField, sortDirection, isAuthLoading]);
 
   // Trigger `fetchFlags` whenever `userAccessToken`, `isAuthLoading`, or sorting parameters change
   useEffect(() => {
@@ -219,24 +198,10 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
     }
     setIsCreatingFlag(true);
     try {
-      const response = await fetch(`${backendUrl}/flags`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userAccessToken}`,
-        },
-        body: JSON.stringify(newFlagData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to create flag: ${response.statusText}`);
-      }
-
-      const newFlag: FeatureFlag = await response.json();
-      setFlags(prevFlags => [...prevFlags, newFlag]); // Add new flag to local state
+      const newFlag = await apiPost<FeatureFlag>("/flags", newFlagData);
+      setFlags(prevFlags => [...prevFlags, newFlag]);
       toast.success(`Feature flag "${newFlag.name}" has been created successfully.`);
-      fetchFlags(); // Re-fetch all flags to ensure consistency (optional, can be optimized)
+      fetchFlags();
       return newFlag;
     } catch (err: any) {
       console.error('Error creating feature flag:', err);
@@ -253,31 +218,15 @@ export const useFeatureFlags = (itemsPerPage: number, backendUrl: string) => {
       toast.error("You are not authenticated. Please log in to toggle flags.");
       return;
     }
-
     setIsTogglingFlagId(flag.id);
-
     const originalEnabledState = flag.enabled;
     setFlags(prevFlags =>
       prevFlags.map(f =>
         f.id === flag.id ? { ...f, enabled: !f.enabled } : f
       )
     );
-
     try {
-      const response = await fetch(`${backendUrl}/flags/${flag.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userAccessToken}`,
-        },
-        body: JSON.stringify({ enabled: !originalEnabledState }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to toggle flag: ${response.statusText}`);
-      }
-
+      await apiPut(`/flags/${flag.id}`, { enabled: !originalEnabledState });
       toast.success(`Feature flag "${flag.name}" has been ${!originalEnabledState ? 'enabled' : 'disabled'}.`);
     } catch (err: any) {
       console.error('Error toggling flag:', err);

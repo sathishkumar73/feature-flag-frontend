@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { ApiKey } from "@/components/types/api-key";
 import { SESSION_KEY_SEEN_FLAG_PREFIX } from "@/components/types/api-key.helpers";
 import { supabase } from "@/lib/supabaseClient";
+import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
 
 export const useApiKeys = () => {
   const [currentKey, setCurrentKey] = useState<ApiKey | null>(null);
@@ -23,26 +24,6 @@ export const useApiKeys = () => {
     getAccessToken();
   }, []);
 
-  // Helper: fetch wrapper with auth header
-  const authFetch = useCallback(
-    async (input: RequestInfo, init?: RequestInit) => {
-      if (!accessToken) {
-        throw new Error("No access token available");
-      }
-      const headers = new Headers(init?.headers || {});
-      headers.set("Authorization", `Bearer ${accessToken}`);
-      headers.set("Content-Type", "application/json");
-
-      const response = await fetch(input, { ...init, headers });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
-      }
-      return response.json();
-    },
-    [accessToken]
-  );
-
   // Mark a key as revealed (seen) in session storage
   const markKeyAsRevealed = useCallback((keyId: string) => {
     sessionStorage.setItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${keyId}`, "true");
@@ -58,24 +39,10 @@ export const useApiKeys = () => {
       setKeyHistory([]);
       return;
     }
-
     async function fetchKeys() {
       try {
         setIsLoading(true);
-
-        // 1. Fetch current active API key + plainKey
-        const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys`);
-        // data: { apiKey: ApiKey, plainKey: string }
-
-        // 2. Fetch key history separately (adjust endpoint as per your backend)
-        // const historyData = await authFetch(
-        //   "http://localhost:4000/api-keys/history"
-        // );
-        // // historyData: ApiKey[]
-
-        // setCurrentKey(data.apiKey);
-        // setKeyHistory(historyData || []);
-
+        const data = await apiGet<any>("/api-keys");
         if (data.apiKey) {
           const hasSeen =
             sessionStorage.getItem(
@@ -101,7 +68,7 @@ export const useApiKeys = () => {
       }
     }
     fetchKeys();
-  }, [accessToken, authFetch, markKeyAsRevealed]);
+  }, [accessToken, markKeyAsRevealed]);
 
   // Copy key to clipboard and mark as revealed
   const handleCopyKey = useCallback(
@@ -137,20 +104,11 @@ export const useApiKeys = () => {
     }
     setIsGenerating(true);
     try {
-      // POST to /api-keys to generate new key
-      // Backend returns { newKey: ApiKey, plainKey: string }
-      const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys`, {
-        method: "POST",
-      });
+      const data = await apiPost<any>("/api-keys", {});
       const { newKey, plainKey } = data;
-
-      // Revoke old key if exists (optional call)
       if (currentKey) {
         try {
-          await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys/${currentKey.id}`, {
-            method: "DELETE",
-          });
-
+          await apiDelete(`/api-keys/${currentKey.id}`);
           const revokedKey: ApiKey = {
             ...currentKey,
             status: "revoked" as const,
@@ -165,12 +123,10 @@ export const useApiKeys = () => {
           // ignore revoke failure
         }
       }
-
       setCurrentKey({ ...newKey, fullKey: plainKey });
       setIsCurrentKeyRevealed(false);
       sessionStorage.removeItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${newKey.id}`);
       setShowNewKeyModal(true);
-
       toast.success("API Key Generated", {
         description:
           "Your new API key has been generated successfully. Make sure to copy it now - you won't be able to see it again!",
@@ -180,7 +136,7 @@ export const useApiKeys = () => {
     } finally {
       setIsGenerating(false);
     }
-  }, [accessToken, currentKey, authFetch, markKeyAsRevealed]);
+  }, [accessToken, currentKey, markKeyAsRevealed]);
 
   // Revoke current API key
   const revokeCurrentKey = useCallback(async () => {
@@ -190,10 +146,7 @@ export const useApiKeys = () => {
     }
     if (!currentKey) return;
     try {
-      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api-keys/${currentKey.id}`, {
-        method: "DELETE",
-      });
-
+      await apiDelete(`/api-keys/${currentKey.id}`);
       const revokedKey: ApiKey = {
         ...currentKey,
         status: "revoked" as const,
@@ -210,7 +163,7 @@ export const useApiKeys = () => {
     } catch {
       toast.error("Failed to revoke API key.");
     }
-  }, [accessToken, currentKey, authFetch]);
+  }, [accessToken, currentKey]);
 
   return {
     currentKey,
