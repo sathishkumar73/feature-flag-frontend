@@ -12,7 +12,7 @@ const OAuthButtons: React.FC = () => {
       options: {
         redirectTo: `${window.location.origin}/flags`,
         queryParams: {
-          prompt: 'consent',
+          prompt: 'select_account',
         },
       },
     });
