@@ -47,13 +47,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     console.log('[DEBUG] Pathname:', pathname, 'isAuthRoute:', isAuthRoute);
+    let winPath = '';
     if (typeof window !== 'undefined') {
-      console.log('[DEBUG] window.location.pathname:', window.location.pathname);
+      winPath = window.location.pathname;
+      console.log('[DEBUG] window.location.pathname:', winPath);
       // Log cookies for debugging session/cookie issues
       console.log('[DEBUG] document.cookie:', document.cookie);
     }
-    if (!pathname) {
-      console.log('[DEBUG] Pathname is empty, skipping session check.');
+    if (!pathname || !winPath) {
+      console.log('[DEBUG] Pathname or window.location.pathname is empty, skipping session check.');
       return;
     }
     if (!isAuthRoute) {
