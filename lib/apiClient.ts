@@ -9,15 +9,15 @@ export async function getHeaders(additionalHeaders: Record<string, string> = {})
   return headers;
 }
 
-export async function apiGet<T>(endpoint: string, params: Record<string, any> = {}) {
-  const query = new URLSearchParams(params).toString();
+export async function apiGet<T>(endpoint: string, params: Record<string, unknown> = {}) {
+  const query = new URLSearchParams(params as Record<string, string>).toString();
   const url = query ? `${API_BASE_URL}${endpoint}?${query}` : `${API_BASE_URL}${endpoint}`;
   const res = await fetch(url, { headers: await getHeaders() });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<T>;
 }
 
-export async function apiPost<T>(endpoint: string, data: any) {
+export async function apiPost<T>(endpoint: string, data: Record<string, unknown>) {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
     headers: await getHeaders(),
@@ -27,7 +27,7 @@ export async function apiPost<T>(endpoint: string, data: any) {
   return res.json() as Promise<T>;
 }
 
-export async function apiPut<T>(endpoint: string, data: any) {
+export async function apiPut<T>(endpoint: string, data: Record<string, unknown>) {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "PUT",
     headers: await getHeaders(),
