@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { apiPost } from "@/lib/apiClient";
 import type { Session } from "@supabase/supabase-js";
 
 interface AuthListenerProps {
@@ -15,19 +14,19 @@ const AuthListener: React.FC<AuthListenerProps> = ({ children }) => {
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
           // Only upsert if there was no previous session (i.e., a real sign-in)
-          if (!prevSession.current) {
-            try {
-              await apiPost(
-                "/auth/upsert",
-                {
-                  email: session.user.email,
-                  id: session.user.id,
-                }
-              );
-            } catch (err) {
-              console.error("Backend upsert failed:", err);
-            }
-          }
+          // if (!prevSession.current) {
+          //   try {
+          //     await apiPost(
+          //       "/auth/upsert",
+          //       {
+          //         email: session.user.email,
+          //         id: session.user.id,
+          //       }
+          //     );
+          //   } catch (err) {
+          //     console.error("Backend upsert failed:", err);
+          //   }
+          // }
         }
         // Update previous session ref for next event
         prevSession.current = session;

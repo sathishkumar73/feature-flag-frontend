@@ -60,6 +60,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       try {
         console.log('[DEBUG] localStorage keys:', Object.keys(localStorage));
         console.log('[DEBUG] sessionStorage keys:', Object.keys(sessionStorage));
+        // Log the actual Supabase auth token value
+        const sbToken = localStorage.getItem('sb-cdfhghmnbrmqjpoxqpit-auth-token');
+        console.log('[DEBUG] sb-cdfhghmnbrmqjpoxqpit-auth-token:', sbToken);
       } catch (e) {
         console.log('[DEBUG] localStorage/sessionStorage not available:', e);
       }
@@ -69,7 +72,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       return;
     }
     if (!isAuthRoute) {
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
+      supabase.auth.getSession().then((result) => {
+        console.log('[DEBUG] supabase.auth.getSession FULL result:', result);
+        const { data: { session }, error } = result;
         console.log('[DEBUG] supabase.auth.getSession result:', { session, error });
         if (error) {
           console.error('[DEBUG] supabase.auth.getSession error:', error);
