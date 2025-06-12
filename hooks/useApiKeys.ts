@@ -5,8 +5,10 @@ import { SESSION_KEY_SEEN_FLAG_PREFIX } from "@/components/types/api-key.helpers
 import { supabase } from "@/lib/supabaseClient";
 import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
 
+type ApiKeyWithFullKey = ApiKey & { fullKey?: string };
+
 export const useApiKeys = () => {
-  const [currentKey, setCurrentKey] = useState<ApiKey | null>(null);
+  const [currentKey, setCurrentKey] = useState<ApiKeyWithFullKey | null>(null);
   const [keyHistory, setKeyHistory] = useState<ApiKey[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
@@ -25,8 +27,8 @@ export const useApiKeys = () => {
   }, []);
 
   // Mark a key as revealed (seen) in session storage
-  const markKeyAsRevealed = useCallback((keyId: string) => {
-    sessionStorage.setItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${keyId}`, "true");
+  const markKeyAsRevealed = useCallback((keyId: string | number) => {
+    sessionStorage.setItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${String(keyId)}`, "true");
     setIsCurrentKeyRevealed(true);
     setCurrentKey((prev) => (prev ? { ...prev, fullKey: undefined } : null));
   }, []);
@@ -42,7 +44,7 @@ export const useApiKeys = () => {
     async function fetchKeys() {
       try {
         setIsLoading(true);
-        const data = await apiGet<any>("/api-keys");
+        const data = await apiGet<{ apiKey: ApiKey | null; history: ApiKey[]; plainKey?: string }>("/api-keys");
         if (data.apiKey) {
           const hasSeen =
             sessionStorage.getItem(
@@ -59,7 +61,8 @@ export const useApiKeys = () => {
             setIsCurrentKeyRevealed(true);
           }
         }
-      } catch (error) {
+        setKeyHistory(data.history || []);
+      } catch (error: unknown) {
         toast.error("Failed to load API key data.");
         setCurrentKey(null);
         setKeyHistory([]);
@@ -78,7 +81,7 @@ export const useApiKeys = () => {
         .writeText(key)
         .then(() => {
           toast.success("API key copied to clipboard");
-          markKeyAsRevealed(currentKey.id);
+          markKeyAsRevealed(String(currentKey.id));
           setShowNewKeyModal(false);
         })
         .catch(() => {
@@ -91,7 +94,7 @@ export const useApiKeys = () => {
   // Close modal confirmation
   const handleModalCloseConfirmation = useCallback(() => {
     if (currentKey) {
-      markKeyAsRevealed(currentKey.id);
+      markKeyAsRevealed(String(currentKey.id));
     }
     setShowNewKeyModal(false);
   }, [currentKey, markKeyAsRevealed]);
@@ -104,20 +107,19 @@ export const useApiKeys = () => {
     }
     setIsGenerating(true);
     try {
-      const data = await apiPost<any>("/api-keys", {});
+      const data = await apiPost<{ newKey: ApiKey; plainKey: string }>("/api-keys", {});
       const { newKey, plainKey } = data;
       if (currentKey) {
         try {
           await apiDelete(`/api-keys/${currentKey.id}`);
-          const revokedKey: ApiKey = {
+          const revokedKey: ApiKeyWithFullKey = {
             ...currentKey,
-            status: "revoked" as const,
-            revokedAt: new Date().toISOString(),
+            isActive: false,
             fullKey: undefined,
           };
           setKeyHistory((prev) => [revokedKey, ...prev]);
           sessionStorage.removeItem(
-            `${SESSION_KEY_SEEN_FLAG_PREFIX}${currentKey.id}`
+            `${SESSION_KEY_SEEN_FLAG_PREFIX}${String(currentKey.id)}`
           );
         } catch {
           // ignore revoke failure
@@ -125,13 +127,13 @@ export const useApiKeys = () => {
       }
       setCurrentKey({ ...newKey, fullKey: plainKey });
       setIsCurrentKeyRevealed(false);
-      sessionStorage.removeItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${newKey.id}`);
+      sessionStorage.removeItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${String(newKey.id)}`);
       setShowNewKeyModal(true);
       toast.success("API Key Generated", {
         description:
           "Your new API key has been generated successfully. Make sure to copy it now - you won't be able to see it again!",
       });
-    } catch {
+    } catch (error: unknown) {
       toast.error("Failed to generate new API key.");
     } finally {
       setIsGenerating(false);
@@ -147,17 +149,16 @@ export const useApiKeys = () => {
     if (!currentKey) return;
     try {
       await apiDelete(`/api-keys/${currentKey.id}`);
-      const revokedKey: ApiKey = {
+      const revokedKey: ApiKeyWithFullKey = {
         ...currentKey,
-        status: "revoked" as const,
-        revokedAt: new Date().toISOString(),
+        isActive: false,
         fullKey: undefined,
       };
       setKeyHistory((prev) => [revokedKey, ...prev]);
       setCurrentKey(null);
       setIsCurrentKeyRevealed(false);
       sessionStorage.removeItem(
-        `${SESSION_KEY_SEEN_FLAG_PREFIX}${currentKey.id}`
+        `${SESSION_KEY_SEEN_FLAG_PREFIX}${String(currentKey.id)}`
       );
       toast.success("API Key Revoked");
     } catch {
