@@ -46,19 +46,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const segments = pathname.split("/").filter(Boolean);
 
   useEffect(() => {
+    console.log('[DEBUG] Pathname:', pathname, 'isAuthRoute:', isAuthRoute);
     if (!isAuthRoute) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        console.log('[DEBUG] supabase.auth.getSession result:', { session, error });
         if (!session) {
+          console.log('[DEBUG] No session found, redirecting to /auth/login');
           router.replace("/auth/login");
         } else {
           setSession(session);
         }
         setLoading(false);
+      }).catch((err) => {
+        console.error('[DEBUG] Error in supabase.auth.getSession:', err);
+        setLoading(false);
       });
     } else {
       setLoading(false);
     }
-  }, [isAuthRoute, router]);
+  }, [isAuthRoute, router, pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

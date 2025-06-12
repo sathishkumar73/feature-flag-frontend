@@ -27,7 +27,8 @@ const Signin: React.FC = () => {
 
   // Redirect signed-in users to /flags
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('[DEBUG] [login] useEffect supabase.auth.getSession:', { session, error });
       if (session) {
         router.replace("/flags");
       }
@@ -83,16 +84,20 @@ const Signin: React.FC = () => {
     setErrors({});
 
     try {
-      await AuthService.login({
+      const loginResult = await AuthService.login({
         email: formData.email,
         password: formData.password,
       });
-
+      console.log('[DEBUG] [login] AuthService.login result:', loginResult);
+      // Check session after login
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('[DEBUG] [login] post-login supabase.auth.getSession:', { session, error });
       // Redirect on successful login
       router.replace("/flags");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Login failed";
       setErrors({ general: errorMessage });
+      console.error('[DEBUG] [login] Login error:', error);
     } finally {
       setIsLoading(false);
     }
