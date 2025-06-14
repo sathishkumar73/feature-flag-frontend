@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { ApiKey } from "@/components/types/api-key";
 import { SESSION_KEY_SEEN_FLAG_PREFIX } from "@/components/types/api-key.helpers";
 import { supabase } from "@/lib/supabaseClient";
-import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
+import { apiGet, apiPost, apiDelete, apiPut } from "@/lib/apiClient";
 
 export type ApiKeyWithFullKey = ApiKey & { fullKey?: string };
 
@@ -153,7 +153,7 @@ export const useApiKeys = () => {
     }
     if (!currentKey) return;
     try {
-      await apiDelete(`/api-keys/${currentKey.id}`);
+      await apiPut("/api-keys/revoke", { id: currentKey.id });
       const revokedKey: ApiKeyWithFullKey = {
         ...currentKey,
         isActive: false,
