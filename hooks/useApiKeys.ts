@@ -27,7 +27,11 @@ export const useApiKeys = () => {
   }, []);
 
   // Mark a key as revealed (seen) in session storage
-  const markKeyAsRevealed = useCallback((keyId: string | number) => {
+  const markKeyAsRevealed = useCallback((keyId: string | number | undefined) => {
+    if (typeof keyId === 'undefined' || keyId === null) {
+      toast.error('API key is not available. Please refresh and try again.');
+      return;
+    }
     sessionStorage.setItem(`${SESSION_KEY_SEEN_FLAG_PREFIX}${String(keyId)}`, "true");
     setIsCurrentKeyRevealed(true);
     setCurrentKey((prev) => (prev ? { ...prev, fullKey: undefined } : null));
@@ -89,7 +93,10 @@ export const useApiKeys = () => {
   // Copy key to clipboard and mark as revealed
   const handleCopyKey = useCallback(
     (key: string) => {
-      if (!currentKey) return;
+      if (!currentKey || typeof currentKey.id === 'undefined' || currentKey.id === null) {
+        toast.error('API key is not available. Please refresh and try again.');
+        return;
+      }
       navigator.clipboard
         .writeText(key)
         .then(() => {
@@ -106,7 +113,7 @@ export const useApiKeys = () => {
 
   // Close modal confirmation
   const handleModalCloseConfirmation = useCallback(() => {
-    if (currentKey) {
+    if (currentKey && typeof currentKey.id !== 'undefined' && currentKey.id !== null) {
       markKeyAsRevealed(String(currentKey.id));
     }
     setShowNewKeyModal(false);
@@ -120,8 +127,23 @@ export const useApiKeys = () => {
     }
     setIsGenerating(true);
     try {
-      const data = await apiPost<{ newKey: ApiKey; plainKey: string }>("/api-keys", {});
-      const { newKey, plainKey } = data;
+      const data = await apiPost<{ newKey?: ApiKey; apiKey?: ApiKey; key?: ApiKey; plainKey: string }>("/api-keys/generate", {});
+      // Handle backend response where apiKey is a string (the plain key)
+      let newKey = data.newKey || data.key;
+      let plainKey = data.plainKey;
+      if (!newKey && typeof data.apiKey === 'string') {
+        // Backend returns { apiKey: <plainKey> }
+        newKey = { id: Date.now(), hashedKey: '', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        plainKey = data.apiKey;
+      } else if (!newKey && typeof data.apiKey === 'object') {
+        newKey = data.apiKey;
+      }
+      if (!newKey || typeof plainKey !== 'string') {
+        console.error('[APIKEY] Invalid newKey or plainKey from backend:', data);
+        toast.error("API key could not be generated. Please try again or contact support.");
+        setIsGenerating(false);
+        return;
+      }
       if (currentKey) {
         try {
           await apiDelete(`/api-keys/${currentKey.id}`);
@@ -134,7 +156,7 @@ export const useApiKeys = () => {
           sessionStorage.removeItem(
             `${SESSION_KEY_SEEN_FLAG_PREFIX}${String(currentKey.id)}`
           );
-        } catch {
+        } catch (err) {
           // ignore revoke failure
         }
       }
@@ -147,6 +169,7 @@ export const useApiKeys = () => {
           "Your new API key has been generated successfully. Make sure to copy it now - you won't be able to see it again!",
       });
     } catch (error: unknown) {
+      console.error('[APIKEY] Error generating new API key:', error);
       toast.error(error instanceof Error ? error.message : "Failed to generate new API key.");
     } finally {
       setIsGenerating(false);
@@ -161,7 +184,8 @@ export const useApiKeys = () => {
     }
     if (!currentKey) return;
     try {
-      await apiPut("/api-keys/revoke", { id: currentKey.id });
+      // Ensure id is sent as a string for backend validation
+      await apiPut("/api-keys/revoke", { id: String(currentKey.id) });
       const revokedKey: ApiKeyWithFullKey = {
         ...currentKey,
         isActive: false,
