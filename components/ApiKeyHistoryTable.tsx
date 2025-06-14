@@ -31,8 +31,8 @@ const ApiKeyHistoryTable: React.FC<ApiKeyHistoryTableProps> = ({ keyHistory }) =
               </TableRow>
             </TableHeader>
             <TableBody>
-              {keyHistory.map((key) => (
-                <TableRow key={key.id}>
+              {keyHistory.map((key, idx) => (
+                <TableRow key={key.id + '-' + idx}>
                   <TableCell className="font-mono text-sm">{key.hashedKey}</TableCell>
                   <TableCell>
                     <Badge variant={key.isActive ? "default" : "secondary"}>
