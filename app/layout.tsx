@@ -33,6 +33,7 @@ import {
 import { Session } from '@supabase/supabase-js';
 import AuthListener from '@/components/auth/AuthListener';
 import { useSessionRedirect } from "@/hooks/useSessionRedirect";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -89,7 +90,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="en">
         <body>
           <AuthListener>
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
             <Toaster />
           </AuthListener>
         </body>
@@ -171,7 +174,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 )}
               </header>
               <div className="flex flex-1 flex-col gap-4">
-                <main className="flex-1 bg-white min-h-screen">{children}</main>
+                <main className="flex-1 bg-white min-h-screen">
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                </main>
               </div>
             </SidebarInset>
           </SidebarProvider>
