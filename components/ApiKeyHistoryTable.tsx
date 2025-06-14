@@ -15,7 +15,9 @@ const ApiKeyHistoryTable: React.FC<ApiKeyHistoryTableProps> = ({ keyHistory }) =
     <Card>
       <CardHeader>
         <CardTitle>API Key History</CardTitle>
-        <CardDescription>Previous API keys and their status</CardDescription>
+        <CardDescription>
+          Previous API keys and their status. For security, only hashed keys are shown and cannot be used again. If you need a new key, generate a new API key above.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {keyHistory.length > 0 ? (

@@ -45,6 +45,14 @@ export const useApiKeys = () => {
       try {
         setIsLoading(true);
         const data = await apiGet<{ apiKey: ApiKey | null; history: ApiKey[]; plainKey?: string }>("/api-keys");
+        // Support new backend: if data.history is missing, fetch history separately
+        let history = data.history;
+        if (!history) {
+          // fallback: fetch history from /api-keys/history if available
+          try {
+            history = await apiGet<ApiKey[]>("/api-keys/history");
+          } catch {}
+        }
         if (data.apiKey) {
           const hasSeen =
             sessionStorage.getItem(
@@ -64,7 +72,7 @@ export const useApiKeys = () => {
           setShowNewKeyModal(false);
           setIsCurrentKeyRevealed(false);
         }
-        setKeyHistory(data.history || []);
+        setKeyHistory(history || []);
       } catch (error: unknown) {
         toast.error(error instanceof Error ? error.message : "Failed to load API key data.");
         setCurrentKey(null);
