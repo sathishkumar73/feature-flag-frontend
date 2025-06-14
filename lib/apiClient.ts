@@ -43,7 +43,6 @@ export function addResponseInterceptor(interceptor: ResponseInterceptor) {
 // --- Internal fetch with interceptors and abort support ---
 async function interceptedFetch(input: RequestInfo, init: RequestInit): Promise<Response> {
   let req = { input, init };
-  console.log(requestInterceptors)
   for (const interceptor of requestInterceptors) {
     req = await interceptor(req.input, req.init);
   }

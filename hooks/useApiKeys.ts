@@ -55,17 +55,22 @@ export const useApiKeys = () => {
             setShowNewKeyModal(true);
             setIsCurrentKeyRevealed(false);
           } else {
-            setCurrentKey((prev) =>
-              prev ? { ...prev, fullKey: undefined } : null
-            );
+            setCurrentKey({ ...data.apiKey, fullKey: undefined });
             setIsCurrentKeyRevealed(true);
+            setShowNewKeyModal(false);
           }
+        } else {
+          setCurrentKey(null);
+          setShowNewKeyModal(false);
+          setIsCurrentKeyRevealed(false);
         }
         setKeyHistory(data.history || []);
       } catch (error: unknown) {
         toast.error(error instanceof Error ? error.message : "Failed to load API key data.");
         setCurrentKey(null);
         setKeyHistory([]);
+        setShowNewKeyModal(false);
+        setIsCurrentKeyRevealed(false);
       } finally {
         setIsLoading(false);
       }

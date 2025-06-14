@@ -12,6 +12,7 @@ interface CurrentApiKeyCardProps {
   currentKey: ApiKeyWithFullKey | null;
   isGenerating: boolean;
   isCurrentKeyRevealed: boolean;
+  isLoading: boolean; // <-- add this prop
   onGenerateNewKey: () => void;
   onRevokeKey: () => void;
   onShowNewKeyModal: () => void;
@@ -29,6 +30,7 @@ const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
   currentKey,
   isGenerating,
   isCurrentKeyRevealed,
+  isLoading, // <-- add this prop
   onGenerateNewKey,
   onRevokeKey,
   onShowNewKeyModal,
@@ -51,7 +53,11 @@ const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
         <CardDescription>Your active API key for accessing the Feature Flag service</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {currentKey ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <span className="loadercube" />
+          </div>
+        ) : currentKey ? (
           <>
             {/* API Key Display */}
             <div className="space-y-3">
@@ -84,17 +90,20 @@ const CurrentApiKeyCard: React.FC<CurrentApiKeyCardProps> = ({
                     ? currentKey.fullKey
                     : maskApiKey(currentKey.fullKey || currentKey.hashedKey) || 'sk-live_51H8xXxxxxxxx.xxxx'}
                 </span>
-                <button
-                  className="ml-2 p-1 rounded hover:bg-gray-200 transition"
-                  title="Copy"
-                  style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-                  disabled
-                >
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
+                {/* Only show copy button if full key is present and revealed */}
+                {isCurrentKeyRevealed && currentKey.fullKey && (
+                  <button
+                    className="ml-2 p-1 rounded hover:bg-gray-200 transition"
+                    title="Copy"
+                    style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                    onClick={() => navigator.clipboard.writeText(currentKey.fullKey!)}
+                  >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
               {/* Security Notice: only show if full key is temporarily present AND not yet revealed */}

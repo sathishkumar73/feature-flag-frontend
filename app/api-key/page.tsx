@@ -8,6 +8,7 @@ import ApiKeyHeader from "@/components/ApiKeyHeader";
 import CurrentApiKeyCard from "@/components/CurrentApiKeyCard";
 import ApiKeyHistoryTable from "@/components/ApiKeyHistoryTable";
 import NewKeyDisplayModal from "@/components/NewKeyDisplayModal";
+import Loader3DCube from "@/components/ui/loader"; // Import the loader component from the correct path
 
 const ApiKeyPage = () => {
   const {
@@ -21,7 +22,17 @@ const ApiKeyPage = () => {
     revokeCurrentKey,
     handleCopyKey,
     handleModalCloseConfirmation,
+    isLoading, // Destructure isLoading from the hook
   } = useApiKeys();
+
+  // Show loader while loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-xl">
+        <Loader3DCube />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -34,6 +45,7 @@ const ApiKeyPage = () => {
           currentKey={currentKey}
           isGenerating={isGenerating}
           isCurrentKeyRevealed={isCurrentKeyRevealed}
+          isLoading={isLoading} // Pass isLoading to the CurrentApiKeyCard
           onGenerateNewKey={generateNewApiKey}
           onRevokeKey={revokeCurrentKey}
           onShowNewKeyModal={() => setShowNewKeyModal(true)} // Pass the setter to open the modal
