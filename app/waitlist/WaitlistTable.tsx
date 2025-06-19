@@ -106,14 +106,42 @@ export default function WaitlistTable({ data, loading, error }: WaitlistTablePro
       <Dialog open={dialog.open} onOpenChange={(open) => setDialog((d) => ({ ...d, open }))}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Status</DialogTitle>
+            <DialogTitle>
+              {dialog.newStatus === "REVOKED"
+                ? "Revoke Waitlist User?"
+                : dialog.newStatus === "APPROVED"
+                ? "Approve Waitlist User?"
+                : "Mark as Pending?"}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to change status for <b>{dialog.user?.name}</b> to <b>{dialog.newStatus}</b>?
+              <span
+                className={
+                  dialog.newStatus === "REVOKED"
+                    ? "text-destructive"
+                    : dialog.newStatus === "APPROVED"
+                    ? "text-green-700 dark:text-green-400"
+                    : "text-yellow-700 dark:text-yellow-400"
+                }
+              >
+                {dialog.newStatus === "REVOKED"
+                  ? (<>
+                      Are you sure you want to <b>revoke</b> <b>{dialog.user?.name}</b>? This action is <b>destructive</b> and will remove their access to early features.
+                    </>)
+                  : dialog.newStatus === "APPROVED"
+                  ? (<>
+                      Approve <b>{dialog.user?.name}</b> for early access? They will be notified and can use new features.
+                    </>)
+                  : (<>
+                      Mark <b>{dialog.user?.name}</b> as <b>pending</b>? They will remain on the waitlist.
+                    </>)}
+              </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialog({ open: false })}>Cancel</Button>
-            <Button onClick={confirmStatusChange}>Confirm</Button>
+            <Button onClick={confirmStatusChange} variant={dialog.newStatus === "REVOKED" ? "destructive" : "default"}>
+              Confirm
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
