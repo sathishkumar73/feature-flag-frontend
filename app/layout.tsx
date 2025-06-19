@@ -72,6 +72,50 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     router.replace("/auth/login");
   };
 
+  // Route check for root
+  if (pathname === "/") {
+    if (loading) {
+      return (
+        <html lang="en">
+          <body className="flex items-center justify-center min-h-screen">
+            <AuthListener>
+              <Loader3DCube />
+              <Toaster />
+            </AuthListener>
+          </body>
+        </html>
+      );
+    }
+    if (session) {
+      // If already logged in, redirect to /flags
+      if (typeof window !== 'undefined') {
+        window.location.replace('/flags');
+      }
+      return (
+        <html lang="en">
+          <body>
+            <div style={{ padding: 40, textAlign: 'center' }}>
+              <h1>Redirecting to your dashboard...</h1>
+            </div>
+          </body>
+        </html>
+      );
+    }
+    // Not logged in, redirect to signup
+    if (typeof window !== 'undefined') {
+      window.location.replace('/auth/login');
+    }
+    return (
+      <html lang="en">
+        <body>
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <h1>Redirecting to signup...</h1>
+          </div>
+        </body>
+      </html>
+    );
+  }
+
   if (loading) {
     return (
       <html lang="en">

@@ -16,7 +16,7 @@ export interface WaitListSignup {
 
 export function useWaitlist(email: string | undefined) {
   const [data, setData] = useState<WaitListSignup[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
