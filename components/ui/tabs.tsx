@@ -20,12 +20,20 @@ export function Tabs({ defaultValue, value: controlledValue, onValueChange, clas
     <div className={cn("tabs-root", className)} {...props}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          const childType = child.type as any;
-          if (typeof childType === "function" && childType.displayName === "TabsTrigger") {
-            return React.cloneElement(child as React.ReactElement<any>, { setValue });
+          const childType = child.type;
+          if (
+            typeof childType === "function" &&
+            "displayName" in childType &&
+            (childType as { displayName?: string }).displayName === "TabsTrigger"
+          ) {
+            return React.cloneElement(child as React.ReactElement<{ setValue: (v: string) => void }>, { setValue });
           }
-          if (typeof childType === "function" && childType.displayName === "TabsContent") {
-            return React.cloneElement(child as React.ReactElement<any>, { parentValue: value });
+          if (
+            typeof childType === "function" &&
+            "displayName" in childType &&
+            (childType as { displayName?: string }).displayName === "TabsContent"
+          ) {
+            return React.cloneElement(child as React.ReactElement<{ parentValue: string }>, { parentValue: value });
           }
           return child;
         }
@@ -35,8 +43,7 @@ export function Tabs({ defaultValue, value: controlledValue, onValueChange, clas
   );
 }
 
-interface TabsListProps extends React.ComponentPropsWithoutRef<"div"> {}
-export function TabsList({ className, children, ...props }: TabsListProps) {
+export function TabsList({ className, children, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div className={cn("tabs-list flex gap-2 border-b mb-2", className)} {...props}>
       {children}
@@ -57,10 +64,7 @@ export function TabsTrigger({ value, setValue, className, children, ...props }: 
         "tabs-trigger px-4 py-2 rounded-t border-b-2 border-transparent text-sm font-medium transition-colors",
         className
       )}
-      onClick={() => {
-        console.log("[TabsTrigger] clicked, value:", value);
-        setValue && setValue(value);
-      }}
+      onClick={() => setValue && setValue(value)}
       {...props}
     >
       {children}
@@ -71,10 +75,10 @@ TabsTrigger.displayName = "TabsTrigger";
 
 interface TabsContentProps extends React.ComponentPropsWithoutRef<"div"> {
   value: string;
-  setValue?: (v: string) => void;
+  parentValue?: string;
   className?: string;
 }
-export function TabsContent({ value, parentValue, setValue, className, children, ...props }: TabsContentProps & { parentValue?: string }) {
+export function TabsContent({ value, parentValue, className, children, ...props }: TabsContentProps) {
   React.useEffect(() => {
     console.log("[TabsContent] value:", value, "parentValue:", parentValue);
   }, [value, parentValue]);
