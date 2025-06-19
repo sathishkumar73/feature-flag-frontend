@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { createFlag } from "@/services/flagService";
+import flagService from "@/services/flagService";
 import { FeatureFlag } from "@/components/types/flag";
 
 interface CreateFlagDialogProps {
@@ -35,12 +35,12 @@ export default function CreateFlagDialog({
 
   const handleCreateFlag = async () => {
     try {
-      const response = await createFlag({
+      const response = await flagService.createFlag({
         name,
         description,
         environment,
         enabled,
-      });
+      }) as FeatureFlag;
       toast.success("Feature flag created successfully.");
       onOpenChange(false);
       onFlagCreated?.(response);

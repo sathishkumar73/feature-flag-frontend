@@ -1,19 +1,24 @@
-export interface AuditLogRequestParams {
-  flagId?: string;
-}
-
-export interface AuditLogsTableProps {
-  auditLogs: AuditLog[];
-  loading: boolean;
-  error: string | null;
-}
+import { User } from "./user";
 
 export interface AuditLog {
+  id: string;
   action: string;
   flagId: string;
   flagName: string;
-  performedBy: string;
+  performedById?: string | null;
+  performedBy?: User | null;
   details?: string | null;
-  createdAt: Date;
-  id: string;
+  createdAt: string;
 }
+
+export interface AuditLogCreateRequest {
+  action: string;
+  flagId: string;
+  flagName: string;
+  performedById?: string;
+  details?: string;
+}
+
+export type AuditLogActionFilter = 'all' | AuditLog['action'];
+export type AuditLogSortField = 'createdAt' | 'action';
+export type AuditLogSortOrder = 'asc' | 'desc';

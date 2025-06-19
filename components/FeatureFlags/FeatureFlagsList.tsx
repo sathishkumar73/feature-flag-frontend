@@ -37,8 +37,8 @@ const FeatureFlagsList: React.FC<FeatureFlagsListProps> = ({
         description: "Loading...",
         enabled: false,
         environment: "loading",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: "",
+        updatedAt: "",
         rolloutPercentage: 0,
         version: 1,
       }))

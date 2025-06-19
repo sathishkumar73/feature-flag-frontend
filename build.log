@@ -1,0 +1,83 @@
+
+> feature-flag-frontend@0.1.0 build
+> next build
+
+   ▲ Next.js 15.3.2
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings in 0ms
+
+./components/AuditLogDetailsModal.tsx
+Attempted import error: 'getStatusColor' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusColor').
+
+Import trace for requested module:
+./components/AuditLogDetailsModal.tsx
+./app/audit-logs/page.tsx
+
+./components/AuditLogDetailsModal.tsx
+Attempted import error: 'getStatusIcon' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusIcon').
+
+Import trace for requested module:
+./components/AuditLogDetailsModal.tsx
+./app/audit-logs/page.tsx
+
+./components/AuditLogsTable.tsx
+Attempted import error: 'getStatusColor' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusColor').
+
+Import trace for requested module:
+./components/AuditLogsTable.tsx
+./app/audit-logs/page.tsx
+
+./components/AuditLogsTable.tsx
+Attempted import error: 'getStatusIcon' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusIcon').
+
+Import trace for requested module:
+./components/AuditLogsTable.tsx
+./app/audit-logs/page.tsx
+
+ ⚠ Compiled with warnings in 0ms
+
+./components/AuditLogDetailsModal.tsx
+Attempted import error: 'getStatusColor' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusColor').
+
+Import trace for requested module:
+./components/AuditLogDetailsModal.tsx
+./app/audit-logs/page.tsx
+
+./components/AuditLogDetailsModal.tsx
+Attempted import error: 'getStatusIcon' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusIcon').
+
+Import trace for requested module:
+./components/AuditLogDetailsModal.tsx
+./app/audit-logs/page.tsx
+
+./components/AuditLogsTable.tsx
+Attempted import error: 'getStatusColor' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusColor').
+
+Import trace for requested module:
+./components/AuditLogsTable.tsx
+./app/audit-logs/page.tsx
+
+./components/AuditLogsTable.tsx
+Attempted import error: 'getStatusIcon' is not exported from '@/utils/audit-log-helpers' (imported as 'getStatusIcon').
+
+Import trace for requested module:
+./components/AuditLogsTable.tsx
+./app/audit-logs/page.tsx
+
+ ✓ Compiled successfully in 0ms
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/audit-logs/page.tsx:25:5
+Type error: Property 'statusFilter' does not exist on type '{ searchTerm: string; setSearchTerm: Dispatch<SetStateAction<string>>; actionFilter: string; setActionFilter: Dispatch<SetStateAction<string>>; ... 13 more ...; userAccessToken: string | null; }'.
+
+[0m [90m 23 |[39m     searchTerm[33m,[39m setSearchTerm[33m,[39m[0m
+[0m [90m 24 |[39m     actionFilter[33m,[39m setActionFilter[33m,[39m[0m
+[0m[31m[1m>[22m[39m[90m 25 |[39m     statusFilter[33m,[39m setStatusFilter[33m,[39m[0m
+[0m [90m    |[39m     [31m[1m^[22m[39m[0m
+[0m [90m 26 |[39m     sortField[33m,[39m sortOrder[33m,[39m handleSort[33m,[39m[0m
+[0m [90m 27 |[39m     paginatedLogs[33m,[39m filteredAndSortedLogs[33m,[39m [90m// Keep filteredAndSortedLogs for export[39m[0m
+[0m [90m 28 |[39m     currentPage[33m,[39m totalPages[33m,[39m goToNextPage[33m,[39m goToPreviousPage[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null
