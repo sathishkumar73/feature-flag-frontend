@@ -44,13 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const isAuthRoute = pathname?.startsWith("/auth");
+  const isInviteRoute = pathname === "/invite";
   const segments = pathname.split("/").filter(Boolean);
 
-  // Use modular session/redirect logic
+  // Always call hooks at the top level
   useSessionRedirect();
-
   useEffect(() => {
-    if (!isAuthRoute) {
+    if (!isAuthRoute && !isInviteRoute) {
       supabase.auth.getSession().then((result) => {
         const { data: { session } } = result;
         if (session) {
@@ -63,14 +63,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     } else {
       setLoading(false);
     }
-  }, [isAuthRoute, pathname]);
+  }, [isAuthRoute, isInviteRoute, pathname]);
 
+  // Add handleLogout back after hooks
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
     setShowLogoutModal(false);
     router.replace("/auth/login");
   };
+
+  // Skip root redirect logic for /invite (public page)
+  if (isInviteRoute) {
+    return (
+      <html lang="en">
+        <body>
+          {children}
+        </body>
+      </html>
+    );
+  }
 
   // Route check for root
   if (pathname === "/") {
