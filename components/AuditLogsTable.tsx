@@ -1,13 +1,11 @@
 // components/AuditLogsTable.tsx
 import React from 'react';
-import { Copy, Eye, ChevronUp, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { CardContent } from '@/components/ui/card'; // Using CardContent for padding/styling
+import { CardContent } from '@/components/ui/card';
 import { AuditLog, AuditLogSortField, AuditLogSortOrder } from '@/components/types/audit-log';
 import {
   formatTimestamp,
-  copyToClipboard,
   getActionIcon,
   getActionColor,
 } from '@/utils/audit-log-helpers';
@@ -57,8 +55,9 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
               </th>
               <th className="text-left p-3 font-medium text-foreground">Action</th>
               <th className="text-left p-3 font-medium text-foreground">Details</th>
-              <th className="text-left p-3 font-medium text-foreground">Performed By</th>
-              <th className="text-left p-3 font-medium text-foreground">Actions</th>
+              {/* <th className="text-left p-3 font-medium text-foreground">Performed By</th> */}
+              {/* Commented out the Actions column in the Audit Logs table */}
+              {/* <th className="text-left p-3 font-medium text-foreground">Actions</th> */}
             </tr>
           </thead>
           <tbody>
@@ -91,12 +90,13 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     </Badge>
                   </td>
                   <td className="p-3 text-sm text-foreground max-w-xs truncate">{log.details}</td>
-                  <td className="p-3">
+                  {/* <td className="p-3">
                     <div className="text-sm font-medium text-foreground">
                       {log.performedBy?.name}
                     </div>
-                  </td>
-                  <td className="p-3">
+                  </td> */}
+                  {/* Commented out the Actions cell in the table body */}
+                  {/* <td className="p-3">
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
@@ -121,7 +121,7 @@ const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                         <Eye className="h-3 w-3" />
                       </Button>
                     </div>
-                  </td>
+                  </td> */}
                 </tr>
               ))
             )}
