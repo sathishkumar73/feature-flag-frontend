@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 import FeatureFlagsHeader from '@/components/FeatureFlagsHeader';
-import FeatureFlagsFilters from '@/components/FeatureFlagsFilters';
 import FeatureFlagsTable from '@/components/FeatureFlagsTable';
 import FeatureFlagsPagination from '@/components/FeatureFlagsPagination';
 import CreateFlagModal from '@/components/CreateFlagModal';
@@ -17,14 +16,11 @@ import OnboardingOverlay from '@/components/OnboardingOverlay';
 
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { exportFlagsToCSV } from '@/utils/flag-helpers';
-import { FeatureFlag, FlagEnvironmentFilter, FlagStatusFilter } from '@/types/flag';
+import { FeatureFlag } from '@/types/flag';
 import Loader3DCube from '@/components/ui/loader';
 
 const FeatureFlagsPage = () => {
   const {
-    searchTerm, setSearchTerm,
-    environmentFilter, setEnvironmentFilter,
-    statusFilter, setStatusFilter,
     sortField, sortDirection, handleSort,
     paginatedFlags, filteredAndSortedFlags,
     currentPage, totalPages, goToNextPage, goToPreviousPage,
@@ -50,15 +46,15 @@ const FeatureFlagsPage = () => {
     setToggleModalOpen(true);
   };
 
-  const handleOpenExportConfirm = () => {
-    if (filteredAndSortedFlags.length === 0) {
-      toast.info("No flags to export.", {
-        description: "Please adjust your filters or create flags to export data."
-      });
-      return;
-    }
-    setExportConfirmModalOpen(true);
-  };
+  // const handleOpenExportConfirm = () => {
+  //   if (filteredAndSortedFlags.length === 0) {
+  //     toast.info("No flags to export.", {
+  //       description: "Please adjust your filters or create flags to export data."
+  //     });
+  //     return;
+  //   }
+  //   setExportConfirmModalOpen(true);
+  // };
 
   const handleConfirmExport = () => {
     exportFlagsToCSV(filteredAndSortedFlags, toast);
