@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 import InvalidInvitePage from "./InvalidInvitePage";
 import ValidInvitePage from "./ValidInvitePage";
+import InviteTokenChecking from "./InviteTokenChecking";
+import { apiPut } from "@/lib/apiClient";
 
 // Utility to store/retrieve invite token
 type StorageType = "localStorage" | "cookie";
@@ -25,7 +27,6 @@ export default function InvitePage() {
   const [status, setStatus] = useState<'pending'|'valid'|'invalid'>('pending');
 
   useEffect(() => {
-    // If logged in, ignore invite and go to home
     if (userEmail) {
       router.replace("/");
       return;
@@ -33,8 +34,21 @@ export default function InvitePage() {
     const token = searchParams.get("token");
     if (token) {
       saveInviteToken(token, "localStorage");
-      // For now, just statically mark as valid if token exists
-      setStatus('valid');
+      setStatus('pending');
+      apiPut<{ valid: boolean; email?: string; error?: string }>(
+        "/wait-list-signup/verify-invite",
+        { token }
+      )
+        .then((res) => {
+          if (res.valid && res.email) {
+            setStatus('valid');
+          } else {
+            setStatus('invalid');
+          }
+        })
+        .catch(() => {
+          setStatus('invalid');
+        });
     } else {
       setStatus('invalid');
     }
@@ -42,7 +56,7 @@ export default function InvitePage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
-      {status === 'pending' && <div>Checking invite token...</div>}
+      {status === 'pending' && <InviteTokenChecking />}
       {status === 'invalid' && <InvalidInvitePage />}
       {status === 'valid' && (
         <ValidInvitePage />
