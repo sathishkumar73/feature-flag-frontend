@@ -19,7 +19,8 @@ export function useSessionRedirect() {
       return;
     }
     const isAuthRoute = pathname.startsWith("/auth");
-    if (!isAuthRoute) {
+    const isInviteRoute = pathname === "/invite";
+    if (!isAuthRoute && !isInviteRoute) {
       supabase.auth.getSession().then((result) => {
         const { data: { session } } = result;
         if (!session) {
