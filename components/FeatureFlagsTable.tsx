@@ -1,14 +1,12 @@
 // components/FeatureFlagsTable.tsx
 import React from 'react';
-import { Copy, Eye, ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { FeatureFlag, SortField, SortDirection } from '@/types/flag'; // Assuming these types exist
-import { truncateText, formatDate } from '@/utils/flag-helpers'; // Assuming these helpers exist
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { FeatureFlag, SortField, SortDirection } from '@/types/flag';
+import { truncateText, formatDate } from '@/utils/flag-helpers';
 
 interface FeatureFlagsTableProps {
   flags: FeatureFlag[];
@@ -16,8 +14,7 @@ interface FeatureFlagsTableProps {
   sortDirection: SortDirection;
   onSort: (field: SortField) => void;
   onFlagToggle: (flag: FeatureFlag) => void;
-  onViewDetails: (flag: FeatureFlag) => void;
-  isTogglingFlagId?: string | null; // Added for better UX during toggle
+  isTogglingFlagId?: string | null;
 }
 
 const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
@@ -26,15 +23,8 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
   sortDirection,
   onSort,
   onFlagToggle,
-  onViewDetails,
-  isTogglingFlagId, // Destructure the new prop
+  isTogglingFlagId,
 }) => {
-
-  const handleCopyFlagId = (flagId: string) => {
-    navigator.clipboard.writeText(flagId);
-    toast.success(`${flagId} has been copied to your clipboard.`);
-  };
-
   return (
     <Table>
       <TableHeader>
@@ -67,7 +57,8 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
               )}
             </Button>
           </TableHead>
-          <TableHead>Actions</TableHead>
+          {/* Commented out the Actions column in the Feature Flags table */}
+          {/* <TableHead>Actions</TableHead> */}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -99,7 +90,8 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
               </TableCell>
               <TableCell>{flag.rolloutPercentage}%</TableCell>
               <TableCell>{formatDate(flag.createdAt)}</TableCell>
-              <TableCell>
+              {/* Commented out the Actions cell in the table body */}
+              {/* <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -118,7 +110,7 @@ const FeatureFlagsTable: React.FC<FeatureFlagsTableProps> = ({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
+              </TableCell> */}
             </TableRow>
           ))
         )}

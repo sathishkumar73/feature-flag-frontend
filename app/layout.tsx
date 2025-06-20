@@ -9,6 +9,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -267,7 +268,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="flex flex-1 flex-col gap-4">
                 <main className="flex-1 bg-white min-h-screen">
                   <ErrorBoundary>
-                    {children}
+                    <OnboardingProvider>
+                      {children}
+                    </OnboardingProvider>
                   </ErrorBoundary>
                 </main>
               </div>

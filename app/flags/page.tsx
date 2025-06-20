@@ -13,6 +13,7 @@ import CreateFlagModal from '@/components/CreateFlagModal';
 import ToggleFlagModal from '@/components/ToggleFlagModal';
 import FeatureFlagModal from '@/components/FeatureFlagModal';
 import ExportConfirmModal from '@/components/ExportConfirmModal';
+import OnboardingOverlay from '@/components/OnboardingOverlay';
 
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { exportFlagsToCSV } from '@/utils/flag-helpers';
@@ -92,21 +93,22 @@ const FeatureFlagsPage = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6 relative">
+        {/* Onboarding Overlay */}
+        <OnboardingOverlay />
+        
         {/* Header Section */}
         <FeatureFlagsHeader onOpenCreateModal={() => setCreateModalOpen(true)} />
 
         {/* Filters and Search Section */}
-        <FeatureFlagsFilters
-          searchTerm={searchTerm}
+        {/* Commented out filter and search functionality in Feature Flags Table */}
+        {/* <FeatureFlagsFilters
           onSearchTermChange={setSearchTerm}
-          environmentFilter={environmentFilter as FlagEnvironmentFilter}
           onEnvironmentFilterChange={setEnvironmentFilter}
-          statusFilter={statusFilter as FlagStatusFilter}
           onStatusFilterChange={setStatusFilter}
           onExportCSV={handleOpenExportConfirm}
           totalFilteredFlags={filteredAndSortedFlags.length}
-        />
+        /> */}
 
         {/* Feature Flags Table */}
         <Card className="px-6">
@@ -116,7 +118,6 @@ const FeatureFlagsPage = () => {
             sortDirection={sortDirection}
             onSort={handleSort}
             onFlagToggle={handleSwitchToggle}
-            onViewDetails={setSelectedFlag}
             isTogglingFlagId={isTogglingFlagId} // Pass to disable specific switches
           />
         </Card>
