@@ -27,7 +27,6 @@ function InvitePageContent() {
   const [status, setStatus] = useState<'pending'|'valid'|'invalid'>('pending');
 
   useEffect(() => {
-    // If logged in, ignore invite and go to home
     if (userEmail) {
       router.replace("/");
       return;
