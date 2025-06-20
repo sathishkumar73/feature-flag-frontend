@@ -8,18 +8,6 @@ import ValidInvitePage from "./ValidInvitePage";
 import InviteTokenChecking from "./InviteTokenChecking";
 import { apiPut } from "@/lib/apiClient";
 
-// Utility to store/retrieve invite token
-type StorageType = "localStorage" | "cookie";
-const INVITE_TOKEN_KEY = "inviteToken";
-
-function saveInviteToken(token: string, type: StorageType = "localStorage") {
-  if (type === "localStorage") {
-    window.localStorage.setItem(INVITE_TOKEN_KEY, token);
-  } else {
-    document.cookie = `${INVITE_TOKEN_KEY}=${token}; path=/;`;
-  }
-}
-
 function InvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,32 +15,37 @@ function InvitePageContent() {
   const [status, setStatus] = useState<'pending'|'valid'|'invalid'>('pending');
 
   useEffect(() => {
-    // If logged in, ignore invite and go to home
-    if (userEmail) {
-      router.replace("/");
-      return;
-    }
-    const token = searchParams.get("token");
-    if (token) {
-      saveInviteToken(token, "localStorage");
+    // Only use ?token=...
+    const inviteToken = searchParams.get("token");
+    if (inviteToken) {
+      localStorage.setItem("gr_invite_token", inviteToken);
       setStatus('pending');
+      // Always verify and set gr_is_beta_user, even if logged in
       apiPut<{ valid: boolean; email?: string; error?: string }>(
         "/wait-list-signup/verify-invite",
-        { token }
+        { token: inviteToken }
       )
         .then((res) => {
           if (res.valid && res.email) {
+            localStorage.setItem("gr_is_beta_user", "true");
             setStatus('valid');
           } else {
+            localStorage.setItem("gr_is_beta_user", "false");
             setStatus('invalid');
           }
         })
         .catch(() => {
+          localStorage.setItem("gr_is_beta_user", "false");
           setStatus('invalid');
         });
-    } else {
-      setStatus('invalid');
+      return;
     }
+    // If logged in and no token in URL, redirect to home
+    if (userEmail) {
+      router.replace("/");
+      return;
+    }
+    setStatus('invalid');
   }, [searchParams, router, userEmail]);
 
   return (

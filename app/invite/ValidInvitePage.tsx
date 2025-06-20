@@ -47,6 +47,21 @@ export default function ValidInvitePage() {
             Contact us anytime
           </a>
         </p>
+
+        <p className="text-xs text-gray-400 mt-8">
+          You&apos;re accessing the beta version using your invite token. If this isn&apos;t you,{' '}
+          <button
+            className="underline text-primary hover:text-primary/80 transition-colors"
+            onClick={() => {
+              localStorage.removeItem("gr_invite_token");
+              localStorage.removeItem("gr_is_beta_user");
+              window.location.reload();
+            }}
+            type="button"
+          >
+            click here to clear token
+          </button>
+        </p>
       </motion.div>
     </div>
   );

@@ -34,6 +34,8 @@ import { Session } from '@supabase/supabase-js';
 import AuthListener from '@/components/auth/AuthListener';
 import { useSessionRedirect } from "@/hooks/useSessionRedirect";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import NotInvitedPage from "@/app/NotInvitedPage";
+import { apiGet } from "@/lib/apiClient";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -51,15 +53,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   useSessionRedirect();
   useEffect(() => {
     if (!isAuthRoute && !isInviteRoute) {
-      supabase.auth.getSession().then((result) => {
-        const { data: { session } } = result;
-        if (session) {
-          setSession(session);
-        }
+      const token = typeof window !== 'undefined' ? localStorage.getItem("gr_invite_token") : null;
+      if (!token) {
         setLoading(false);
-      }).catch(() => {
-        setLoading(false);
-      });
+        setSession(null);
+        // Show not-invited page by setting a special state
+        setShowLogoutModal(false); // just in case
+        // Instead of redirect, render NotInvitedPage below
+      } else {
+        supabase.auth.getSession().then((result) => {
+          const { data: { session } } = result;
+          if (session) {
+            setSession(session);
+          }
+          setLoading(false);
+        }).catch(() => {
+          setLoading(false);
+        });
+      }
     } else {
       setLoading(false);
     }
@@ -72,6 +83,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     setShowLogoutModal(false);
     router.replace("/auth/login");
   };
+
+  // Sync invite token with supabase user after login
+  useEffect(() => {
+    if (session && typeof window !== 'undefined') {
+      const token = localStorage.getItem("gr_invite_token");
+      if (!token && session.user?.email) {
+        // Check if user is in beta_users and get invite token
+        apiGet<{ found: boolean; invite_token?: string }>(
+          "/wait-list-signup/invite-token",
+          { email: session.user.email }
+        ).then((res) => {
+          if (res.found && res.invite_token) {
+            localStorage.setItem("gr_invite_token", res.invite_token);
+            localStorage.setItem("gr_is_beta_user", "true");
+            // Optionally reload or update state
+            window.location.reload();
+          } else {
+            localStorage.setItem("gr_is_beta_user", "false");
+          }
+        }).catch(() => {
+          localStorage.setItem("gr_is_beta_user", "false");
+        });
+      }
+    }
+  }, [session]);
 
   // Skip root redirect logic for /invite (public page)
   if (isInviteRoute) {
@@ -151,6 +187,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ErrorBoundary>
             <Toaster />
           </AuthListener>
+        </body>
+      </html>
+    );
+  }
+
+  // Show NotInvitedPage if not invited
+  if (!isAuthRoute && !isInviteRoute && typeof window !== 'undefined' && !localStorage.getItem("gr_invite_token")) {
+    return (
+      <html lang="en">
+        <body>
+          <NotInvitedPage />
         </body>
       </html>
     );
