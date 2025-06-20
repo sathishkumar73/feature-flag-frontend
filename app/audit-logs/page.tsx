@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 
 // Import modularized components and hooks
 import AuditLogsHeader from '@/components/AuditLogsHeader';
-import AuditLogsFilters from '@/components/AuditLogsFilters';
 import AuditLogsTable from '@/components/AuditLogsTable';
 import AuditLogsPagination from '@/components/AuditLogsPagination';
 import AuditLogDetailsModal from '@/components/AuditLogDetailsModal';
@@ -20,8 +19,6 @@ import Loader3DCube from '@/components/ui/loader';
 const AuditLogsPage = () => {
   // Use the custom hook to manage all audit log logic and state
   const {
-    searchTerm, setSearchTerm,
-    actionFilter, setActionFilter,
     sortField, sortOrder, handleSort,
     paginatedLogs, filteredAndSortedLogs, // Keep filteredAndSortedLogs for export
     currentPage, totalPages, goToNextPage, goToPreviousPage,
@@ -33,15 +30,15 @@ const AuditLogsPage = () => {
   const [exportConfirmModalOpen, setExportConfirmModalOpen] = useState(false); // New state for export modal
 
   // Function to open the export confirmation modal
-  const handleOpenExportConfirm = () => {
-    if (filteredAndSortedLogs.length === 0) {
-      toast.info("No logs to export.", {
-        description: "Please adjust your filters to include data for export."
-      });
-      return;
-    }
-    setExportConfirmModalOpen(true);
-  };
+  // const handleOpenExportConfirm = () => {
+  //   if (filteredAndSortedLogs.length === 0) {
+  //     toast.info("No logs to export.", {
+  //       description: "Please adjust your filters to include data for export."
+  //     });
+  //     return;
+  //   }
+  //   setExportConfirmModalOpen(true);
+  // };
 
   // Function called when export is confirmed
   const handleConfirmExport = () => {
