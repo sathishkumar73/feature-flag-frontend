@@ -13,6 +13,7 @@ import CreateFlagModal from '@/components/CreateFlagModal';
 import ToggleFlagModal from '@/components/ToggleFlagModal';
 import FeatureFlagModal from '@/components/FeatureFlagModal';
 import ExportConfirmModal from '@/components/ExportConfirmModal';
+import OnboardingOverlay from '@/components/OnboardingOverlay';
 
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { exportFlagsToCSV } from '@/utils/flag-helpers';
@@ -92,7 +93,10 @@ const FeatureFlagsPage = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6 relative">
+        {/* Onboarding Overlay */}
+        <OnboardingOverlay />
+        
         {/* Header Section */}
         <FeatureFlagsHeader onOpenCreateModal={() => setCreateModalOpen(true)} />
 

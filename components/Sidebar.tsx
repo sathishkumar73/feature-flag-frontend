@@ -29,6 +29,7 @@ export const AppSidebar = () => {
           <Link
             href="/api-key"
             className="flex items-center gap-2 py-2 px-4 rounded-md hover:bg-gray-200 hover:text-blue-600 transition duration-200"
+            id="api-key-link"
           >
             <Key className="w-5 h-5" />
             API Keys

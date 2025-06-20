@@ -1,0 +1,27 @@
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4), 0 0 12px 3px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.6), 0 0 15px 5px rgba(59, 130, 246, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4), 0 0 12px 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.target-highlight {
+  position: relative;
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+
+.target-highlight-pulse {
+  animation: pulse 2s infinite;
+  background-color: rgba(219, 234, 254, 0.5) !important;
+}
+
+.api-key-highlight {
+  animation: pulse 1.5s infinite;
+  background-color: rgba(199, 210, 254, 0.8) !important;
+}
