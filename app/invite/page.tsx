@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 import InvalidInvitePage from "./InvalidInvitePage";
+import ValidInvitePage from "./ValidInvitePage";
 
 // Utility to store/retrieve invite token
 type StorageType = "localStorage" | "cookie";
@@ -44,7 +45,7 @@ export default function InvitePage() {
       {status === 'pending' && <div>Checking invite token...</div>}
       {status === 'invalid' && <InvalidInvitePage />}
       {status === 'valid' && (
-        <div className="text-green-700 font-semibold">Invite token is valid! You may now sign up or log in.</div>
+        <ValidInvitePage />
       )}
     </div>
   );
