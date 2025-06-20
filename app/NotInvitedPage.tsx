@@ -1,6 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 
-export default function InvalidInvitePage() {
+export default function NotInvitedPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-gray-200">
@@ -9,10 +9,10 @@ export default function InvalidInvitePage() {
             <AlertTriangle className="h-6 w-6" />
           </div>
         </div>
-
-        <h1 className="text-2xl font-semibold mb-2 text-foreground">This invite link is invalid or has been revoked</h1>
+        <h1 className="text-2xl font-semibold mb-2 text-foreground">Looks like you’re not on the guest list yet.</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          It looks like the invite token you used is no longer active. This could happen if it was already used or expired.
+          GradualRollout is currently in beta.<br />
+          Join the waitlist and we’ll send you an invite soon!
         </p>
         <a
           href="https://gradualrollout.com"

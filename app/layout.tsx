@@ -21,7 +21,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import Loader3DCube from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
-
 import {
   Dialog,
   DialogContent,
@@ -34,6 +33,8 @@ import { Session } from '@supabase/supabase-js';
 import AuthListener from '@/components/auth/AuthListener';
 import { useSessionRedirect } from "@/hooks/useSessionRedirect";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import NotInvitedPage from "@/app/NotInvitedPage";
+import { apiGet } from "@/lib/apiClient";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -47,25 +48,53 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const isInviteRoute = pathname === "/invite";
   const segments = pathname.split("/").filter(Boolean);
 
-  // Always call hooks at the top level
   useSessionRedirect();
+
   useEffect(() => {
-    if (!isAuthRoute && !isInviteRoute) {
-      supabase.auth.getSession().then((result) => {
-        const { data: { session } } = result;
-        if (session) {
-          setSession(session);
-        }
-        setLoading(false);
-      }).catch(() => {
-        setLoading(false);
-      });
-    } else {
+    if (isAuthRoute || isInviteRoute) {
       setLoading(false);
+      return;
     }
+
+    supabase.auth.getSession().then(async (result) => {
+      const { data: { session } } = result;
+      setSession(session);
+
+      const token = localStorage.getItem("gr_invite_token");
+
+      if (token) {
+        setLoading(false);
+        return;
+      }
+
+      if (session?.user?.email) {
+        try {
+          const res = await apiGet<{ found: boolean; invite_token?: string }>(
+            "/wait-list-signup/invite-token",
+            { email: session.user.email }
+          );
+
+          if (res.found && res.invite_token) {
+            localStorage.setItem("gr_invite_token", res.invite_token);
+            localStorage.setItem("gr_is_beta_user", "true");
+            window.location.reload();
+          } else {
+            localStorage.setItem("gr_is_beta_user", "false");
+            setLoading(false);
+          }
+        } catch (err) {
+          localStorage.setItem("gr_is_beta_user", "false");
+          console.error("Failed to fetch invite token:", err);
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    }).catch(() => {
+      setLoading(false);
+    });
   }, [isAuthRoute, isInviteRoute, pathname]);
 
-  // Add handleLogout back after hooks
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
@@ -73,7 +102,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     router.replace("/auth/login");
   };
 
-  // Skip root redirect logic for /invite (public page)
   if (isInviteRoute) {
     return (
       <html lang="en">
@@ -84,7 +112,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // Route check for root
   if (pathname === "/") {
     if (loading) {
       return (
@@ -99,7 +126,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       );
     }
     if (session) {
-      // If already logged in, redirect to /flags
       if (typeof window !== 'undefined') {
         window.location.replace('/flags');
       }
@@ -113,7 +139,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </html>
       );
     }
-    // Not logged in, redirect to signup
     if (typeof window !== 'undefined') {
       window.location.replace('/auth/login');
     }
@@ -151,6 +176,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ErrorBoundary>
             <Toaster />
           </AuthListener>
+        </body>
+      </html>
+    );
+  }
+
+  if (!isAuthRoute && !isInviteRoute && typeof window !== 'undefined' && !localStorage.getItem("gr_invite_token")) {
+    return (
+      <html lang="en">
+        <body>
+          <NotInvitedPage />
         </body>
       </html>
     );

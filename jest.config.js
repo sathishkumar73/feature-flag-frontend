@@ -1,12 +1,14 @@
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+const nextJest = require('next/jest');
+
+const createJestConfig = nextJest({
+  dir: './',
+});
+
+module.exports = createJestConfig({
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-  },
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/cypress/'],
-};
+  testEnvironment: 'jsdom',
+});
