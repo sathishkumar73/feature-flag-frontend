@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 import InvalidInvitePage from "./InvalidInvitePage";
@@ -20,7 +20,7 @@ function saveInviteToken(token: string, type: StorageType = "localStorage") {
   }
 }
 
-export default function InvitePage() {
+function InvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userEmail = useSupabaseUser();
@@ -62,5 +62,13 @@ export default function InvitePage() {
         <ValidInvitePage />
       )}
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <InvitePageContent />
+    </Suspense>
   );
 }
