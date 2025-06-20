@@ -60,7 +60,7 @@ const OnboardingOverlay: React.FC = () => {
         return (
           <OnboardingTooltip
             step={0}
-            totalSteps={3}
+            totalSteps={4}
             targetId="feature-flags-header"
             title="Welcome to Feature Flags"
             description="Let's get you started with managing your feature flags. This brief tour will show you the basics."
@@ -76,7 +76,7 @@ const OnboardingOverlay: React.FC = () => {
         return (
           <OnboardingTooltip
             step={1}
-            totalSteps={3}
+            totalSteps={4}
             targetId="create-flag-button"
             title="Create Your First Flag"
             description="Click here to create your first feature flag. Feature flags let you control features in your application."
@@ -88,13 +88,29 @@ const OnboardingOverlay: React.FC = () => {
           />
         );
       
+      case OnboardingStep.DOCUMENTATION:
+        return (
+          <OnboardingTooltip
+            step={2}
+            totalSteps={4}
+            targetId="documentation-link"
+            title="Explore Documentation"
+            description="Check out the documentation to learn how to use GradualRollout SDK in your app."
+            position="right"
+            onNext={nextStep}
+            onPrev={prevStep}
+            onSkip={skipOnboarding}
+            isVisible={shouldShowStep(OnboardingStep.DOCUMENTATION)}
+          />
+        );
+      
       case OnboardingStep.API_KEY:
         // Determine best position based on screen size
         const apiKeyPosition = windowWidth > 1200 ? "right" : "bottom";
         return (
           <OnboardingTooltip
-            step={2}
-            totalSteps={3}
+            step={3}
+            totalSteps={4}
             targetId="api-key-link"
             title="Get Your API Key"
             description="After creating flags, you'll need an API key to use them in your application. Click here to generate your API key."

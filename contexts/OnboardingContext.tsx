@@ -5,8 +5,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 export enum OnboardingStep {
   WELCOME = 0,
   CREATE_FLAG = 1,
-  API_KEY = 2,
-  COMPLETED = 3,
+  DOCUMENTATION = 2,
+  API_KEY = 3,
+  COMPLETED = 4,
 }
 
 interface OnboardingContextType {

@@ -219,6 +219,10 @@ describe("FeatureFlagsPage with Onboarding", () => {
     fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
     
+    // Click next to go to documentation step
+    fireEvent.click(screen.getByText("Next"));
+    expect(screen.getByText("Explore Documentation")).toBeInTheDocument();
+    
     // Click next to go to API key step
     fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Get Your API Key")).toBeInTheDocument();
@@ -229,18 +233,20 @@ describe("FeatureFlagsPage with Onboarding", () => {
     // No tooltips should be visible anymore
     expect(screen.queryByText("Welcome to Feature Flags")).not.toBeInTheDocument();
     expect(screen.queryByText("Create Your First Flag")).not.toBeInTheDocument();
+    expect(screen.queryByText("Explore Documentation")).not.toBeInTheDocument();
     expect(screen.queryByText("Get Your API Key")).not.toBeInTheDocument();
     
     // LocalStorage should be updated
     expect(localStorage.setItem).toHaveBeenCalledWith("onboardingComplete", "true");
-    expect(localStorage.setItem).toHaveBeenCalledWith("onboardingStep", "3");
+    expect(localStorage.setItem).toHaveBeenCalledWith("onboardingStep", "4");
   });
 
   test("onboarding tooltips respond to screen size changes", () => {
     renderPage();
     
-    // Go to API key step
+    // Go to documentation step
     fireEvent.click(screen.getByText("Next")); // To create flag
+    fireEvent.click(screen.getByText("Next")); // To documentation
     fireEvent.click(screen.getByText("Next")); // To API key
     
     // Simulate resize to large screen

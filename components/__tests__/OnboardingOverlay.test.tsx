@@ -37,6 +37,12 @@ const setupTargetElements = () => {
   apiKeyLink.textContent = "API Keys";
   document.body.appendChild(apiKeyLink);
   
+  // Create Documentation link
+  const documentationLink = document.createElement("a");
+  documentationLink.id = "documentation-link";
+  documentationLink.textContent = "Documentation";
+  document.body.appendChild(documentationLink);
+  
   // Mock getBoundingClientRect for all elements
   const mockRect = {
     top: 100,
@@ -122,19 +128,19 @@ describe("OnboardingOverlay", () => {
   test("advances through onboarding steps when clicking next", () => {
     renderWithProvider("/flags");
     
-    // Initially at welcome step
+    // Step 1: Welcome
     expect(screen.getByText("Welcome to Feature Flags")).toBeInTheDocument();
-    
-    // Click next to advance to create flag step
     fireEvent.click(screen.getByText("Next"));
     
-    // Now should show create flag tooltip
+    // Step 2: Create Flag
     expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
-    
-    // Click next to advance to API key step
     fireEvent.click(screen.getByText("Next"));
     
-    // Now should show API key tooltip
+    // Step 3: Documentation
+    expect(screen.getByText("Explore Documentation")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Next"));
+    
+    // Step 4: API Key
     expect(screen.getByText("Get Your API Key")).toBeInTheDocument();
   });
 
@@ -150,7 +156,18 @@ describe("OnboardingOverlay", () => {
     // Now we should be at create flag step
     expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
     
+    // Click next to advance to documentation step
+    fireEvent.click(screen.getByText("Next"));
+    
+    // Now we should be at documentation step
+    expect(screen.getByText("Explore Documentation")).toBeInTheDocument();
+    
     // Click back button
+    fireEvent.click(screen.getByText("Back"));
+    
+    // We should be back at create flag step
+    expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
+    
     fireEvent.click(screen.getByText("Back"));
     
     // We should be back at welcome step
@@ -167,6 +184,10 @@ describe("OnboardingOverlay", () => {
     fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
     
+    // Click next to go to documentation step
+    fireEvent.click(screen.getByText("Next"));
+    expect(screen.getByText("Explore Documentation")).toBeInTheDocument();
+    
     // Click next to go to API key step
     fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Get Your API Key")).toBeInTheDocument();
@@ -181,6 +202,7 @@ describe("OnboardingOverlay", () => {
     // No tooltips should be visible anymore
     expect(screen.queryByText("Welcome to Feature Flags")).not.toBeInTheDocument();
     expect(screen.queryByText("Create Your First Flag")).not.toBeInTheDocument();
+    expect(screen.queryByText("Explore Documentation")).not.toBeInTheDocument();
     expect(screen.queryByText("Get Your API Key")).not.toBeInTheDocument();
   });
 
@@ -204,33 +226,28 @@ describe("OnboardingOverlay", () => {
   test("changes tooltip position based on screen size for API key step", () => {
     // Mock the implementation of window.innerWidth
     Object.defineProperty(window, 'innerWidth', { writable: true, value: 1500 }); // Large screen
-    
     renderWithProvider("/flags");
-    
     // Ensure welcome tooltip is visible
     expect(screen.getByText("Welcome to Feature Flags")).toBeInTheDocument();
-    
-    // Advance to API key step
-    fireEvent.click(screen.getByText("Next")); // To create flag
+    // Advance to create flag step
+    fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
-    
-    fireEvent.click(screen.getByText("Next")); // To API key
+    // Advance to documentation step
+    fireEvent.click(screen.getByText("Next"));
+    expect(screen.getByText("Explore Documentation")).toBeInTheDocument();
+    // Advance to API key step
+    fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Get Your API Key")).toBeInTheDocument();
-    
     // Change to small screen
     Object.defineProperty(window, 'innerWidth', { writable: true, value: 800 }); // Small screen
-    
     // Trigger resize event
     act(() => {
       window.dispatchEvent(new Event('resize'));
     });
-    
     // Force re-render by navigating back and forth
-    fireEvent.click(screen.getByText("Back")); // Back to create flag
-    expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
-    
+    fireEvent.click(screen.getByText("Back")); // Back to documentation
+    expect(screen.getByText("Explore Documentation")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Next")); // Forward to API key again
-    
     // API key tooltip should still be visible
     expect(screen.getByText("Get Your API Key")).toBeInTheDocument();
   });

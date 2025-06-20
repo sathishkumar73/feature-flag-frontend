@@ -134,7 +134,13 @@ describe("OnboardingContext", () => {
     expect(result.current.currentStep).toBe(OnboardingStep.CREATE_FLAG);
     
     act(() => {
-      result.current.nextStep(); // CREATE_FLAG -> API_KEY
+      result.current.nextStep(); // CREATE_FLAG -> DOCUMENTATION
+    });
+    
+    expect(result.current.currentStep).toBe(OnboardingStep.DOCUMENTATION);
+    
+    act(() => {
+      result.current.nextStep(); // DOCUMENTATION -> API_KEY
     });
     
     expect(result.current.currentStep).toBe(OnboardingStep.API_KEY);
