@@ -84,15 +84,32 @@ const Signin: React.FC = () => {
     setErrors({});
 
     try {
-      const loginResult = await AuthService.login({
+      // Add a type for loginResult to avoid TS errors
+      type LoginResult = {
+        data?: {
+          session?: {
+            session?: { access_token: string; refresh_token: string }
+          }
+        }
+      };
+      const loginResult = (await AuthService.login({
         email: formData.email,
         password: formData.password,
-      });
-      console.log('[DEBUG] [login] AuthService.login result:', loginResult);
-      // Check session after login
+      })) as LoginResult;
+      console.log('[DEBUG] loginResult:', loginResult);
+
+      const tokens = loginResult?.data?.session?.session;
+      if (tokens && tokens.access_token && tokens.refresh_token) {
+        console.log('[DEBUG] Setting session:', tokens);
+        await supabase.auth.setSession({
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        });
+        // Wait a tick to ensure session is persisted
+        await new Promise((res) => setTimeout(res, 100));
+      }
       const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('[DEBUG] [login] post-login supabase.auth.getSession:', { session, error });
-      // Redirect on successful login
+      console.log('[DEBUG] post-login supabase.auth.getSession:', { session, error });
       router.replace("/flags");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Login failed";

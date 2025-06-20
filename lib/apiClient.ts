@@ -75,8 +75,8 @@ export async function apiPost<T>(endpoint: string, data: Record<string, unknown>
   return res.json() as Promise<T>;
 }
 
-export async function apiPut<T>(endpoint: string, data: Record<string, unknown>, options?: { signal?: AbortSignal }) {
-  const headers = await getHeaders();
+export async function apiPut<T>(endpoint: string, data: Record<string, unknown>, options?: { signal?: AbortSignal, headers?: Record<string, string> }) {
+  const headers = await getHeaders(options?.headers);
   const res = await interceptedFetch(`${API_BASE_URL}${endpoint}`, {
     method: "PUT",
     headers,

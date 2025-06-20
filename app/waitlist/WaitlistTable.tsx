@@ -12,6 +12,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { WaitListSignup } from "@/hooks/useWaitlist";
+import { useSupabaseUser } from "@/hooks/useSupabaseUser";
+import { apiPut } from "@/lib/apiClient";
 
 type WaitListStatus = "APPROVED" | "PENDING" | "REVOKED";
 
@@ -34,6 +36,8 @@ export default function WaitlistTable({ data, error }: Omit<WaitlistTableProps, 
     newStatus?: WaitListStatus;
   }>({ open: false });
 
+  const currentUserEmail = useSupabaseUser();
+
   // For demo, status change is local only. In real app, call backend here.
   const [localData, setLocalData] = React.useState<WaitListSignup[]>(data);
   React.useEffect(() => { setLocalData(data); }, [data]);
@@ -42,14 +46,23 @@ export default function WaitlistTable({ data, error }: Omit<WaitlistTableProps, 
     setDialog({ open: true, user, newStatus });
   };
 
-  const confirmStatusChange = () => {
+  const confirmStatusChange = async () => {
     if (dialog.user && dialog.newStatus) {
-      setLocalData((prev) =>
-        prev.map((u) =>
-          u.id === dialog.user!.id ? { ...u, status: dialog.newStatus! } : u
-        )
-      );
-      // TODO: Call backend to persist status change
+      try {
+        await apiPut(
+          "/wait-list-signup",
+          { email: dialog.user.email, status: dialog.newStatus },
+          { headers: { "x-user-email": currentUserEmail?.toLowerCase() || "" } }
+        );
+        setLocalData((prev) =>
+          prev.map((u) =>
+            u.id === dialog.user!.id ? { ...u, status: dialog.newStatus! } : u
+          )
+        );
+      } catch (err) {
+        // Optionally show an error toast here
+        console.error("Failed to update waitlist status", err);
+      }
     }
     setDialog({ open: false });
   };
