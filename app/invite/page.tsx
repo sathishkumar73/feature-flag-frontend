@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 import InvalidInvitePage from "./InvalidInvitePage";
@@ -57,14 +56,6 @@ function InvitePageContent() {
         <ValidInvitePage />
       )}
     </div>
-  );
-}
-
-export default function InvitePage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <InvitePageContent />
-    </Suspense>
   );
 }
 
