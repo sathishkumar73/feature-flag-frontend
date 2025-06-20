@@ -59,14 +59,14 @@ const AuditLogsPage = () => {
       <AuditLogsHeader />
 
       {/* Filters and Search Section */}
-      <AuditLogsFilters
+      {/* <AuditLogsFilters
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         actionFilter={actionFilter}
         onActionFilterChange={setActionFilter}
         onExportCSV={handleOpenExportConfirm} // Use the new handler here
         totalFilteredLogsCount={filteredAndSortedLogs.length}
-      />
+      /> */}
 
       {/* Audit Logs Table */}
       <Card>

@@ -7,7 +7,7 @@ import { Key, ToggleRight, FileText, Rocket, FileBarChart } from "lucide-react";
 export const AppSidebar = () => {
   const pathname = usePathname();
   return (
-    <Sidebar className="w-64 bg-gray-100 border-r shadow-md z-50" collapsible="none" variant="sidebar">
+    <Sidebar className="w-64 bg-gray-100 border-r shadow-md z-50" variant="sidebar">
       <div className="p-6 overflow-y-auto">
         <h2 className="text-xl font-bold mb-6">
           <Rocket className="w-5 h-5 mr-2 inline-block" />
@@ -23,7 +23,7 @@ export const AppSidebar = () => {
           </Link>
           <Link
             href="/audit-logs"
-            className={`flex items-center gap-2 py-3 px-4 rounded-[20px] transition duration-200 font-medium border-l-4 hover:border-gray-400 hover:bg-gray-200 text-black ${pathname.startsWith('/audit-logs') ? 'bg-[#e9ebee] font-semibold shadow-none border-transparent' : 'border-transparent'}`}
+            className={`flex items-center gap-2 py-3 px-4 rounded-[20px] transition duration-200 font-medium border-l-4 hover:border-gray-400 hover1:bg-gray-200 text-black ${pathname.startsWith('/audit-logs') ? 'bg-[#e9ebee] font-semibold shadow-none border-transparent' : 'border-transparent'}`}
           >
             <FileBarChart className="w-5 h-5" />
             Audit Logs
