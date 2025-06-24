@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./ui/sidebar";
-import { Key, ToggleRight, FileText, Rocket, FileBarChart } from "lucide-react";
+import { Key, ToggleRight, FileText, Rocket, FileBarChart, Bird } from "lucide-react";
 
 export const AppSidebar = () => {
   const pathname = usePathname();
@@ -27,6 +27,13 @@ export const AppSidebar = () => {
           >
             <FileBarChart className="w-5 h-5" />
             Audit Logs
+          </Link>
+          <Link
+            href="/canary-deployment"
+            className={`flex items-center gap-2 py-3 px-4 rounded-[20px] transition duration-200 font-medium border-l-4 hover:border-gray-400 hover:bg-gray-200 text-black ${pathname.startsWith('/canary-deployment') ? 'bg-[#e9ebee] font-semibold shadow-none border-transparent' : 'border-transparent'}`}
+          >
+            <Bird className="w-5 h-5" />
+            Canary
           </Link>
           <Link
             href="/documentation"
