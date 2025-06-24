@@ -17,8 +17,11 @@ import {
   GCPProjectsResponse,
   GCPProject
 } from '@/components/canary-deployment';
+import CanaryOnboarding from '@/components/canary-deployment/CanaryOnboarding';
+import { Button } from '@/components/ui/button';
+import { Cloud, ArrowRight, Sparkles } from 'lucide-react';
 
-const GCPHeroInitialState = () => {
+const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: boolean) => void; }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -129,6 +132,34 @@ const GCPHeroInitialState = () => {
         {activeProject && (
           <DeployAction activeProject={activeProject} onDeploy={handleDeploy} />
         )}
+        
+        {/* Onboarding Sneak Peek */}
+        <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="rounded-full bg-blue-100 p-3">
+                <Sparkles className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Experience Our New Onboarding Flow
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                See our beautiful, step-by-step setup process in action
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowOnboarding(true)}
+              variant="outline"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Cloud className="mr-2 h-4 w-4" />
+              Try the Onboarding Demo
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -140,14 +171,56 @@ const GCPHeroInitialState = () => {
       <ErrorMessage error={error || ''} />
       <DisconnectedHeader />
       <ConnectionCard loading={loading} onConnect={handleConnect} />
+      
+      {/* Onboarding Sneak Peek */}
+      <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-blue-100 p-3">
+              <Sparkles className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Experience Our New Onboarding Flow
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              See our beautiful, step-by-step setup process in action
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowOnboarding(true)}
+            variant="outline"
+            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+          >
+            <Cloud className="mr-2 h-4 w-4" />
+            Try the Onboarding Demo
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default function CanaryDeploymentPage() {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <GCPHeroInitialState />
+      <GCPHeroInitialState 
+        setShowOnboarding={setShowOnboarding}
+      />
+      
+      {/* Onboarding Modal */}
+      <CanaryOnboarding 
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={(deploymentUrl: string) => {
+          console.log('Onboarding completed:', deploymentUrl);
+          setShowOnboarding(false);
+        }}
+      />
     </div>
   );
 } 
