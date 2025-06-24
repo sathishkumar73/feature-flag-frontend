@@ -1,93 +1,74 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Cloud, 
+  ArrowRight
+} from 'lucide-react';
+
+const GCPHeroInitialState = () => {
+  const handleConnect = () => {
+    // In real implementation, this would redirect to Google OAuth
+    console.log('Initiating GCP OAuth flow...');
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold text-primary">Connect to Google Cloud Platform</h1>
+        <p className="text-black">
+          Connect your GCP account to enable zero-setup canary deployments with Cloud Run
+        </p>
+      </div>
+
+      {/* Connection Status Card */}
+      <Card className="border-2 border-dashed border-muted">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Cloud className="w-6 h-6 mr-2 text-accent" />
+              GCP Connection Status
+            </div>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+              Disconnected
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+              <Cloud className="w-10 h-10 text-black" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Connect</h3>
+              <p className="text-gray-600 mb-4">
+                Connect your Google Cloud Platform account to deploy canary proxies in minutes
+              </p>
+              <Button 
+                onClick={handleConnect}
+                className="primary hover:bg-blue-700 text-white px-8 py-3"
+                size="lg"
+              >
+                <Cloud className="w-5 h-5 mr-2" />
+                Connect with Google Cloud
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 export default function CanaryDeploymentPage() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Canary Deployment
-          </h1>
-          <p className="text-xl text-gray-600">
-            Deploy with confidence using our advanced canary deployment system
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                🚀 Gradual Rollout
-                <Badge variant="secondary">New</Badge>
-              </CardTitle>
-              <CardDescription>
-                Deploy new features to a small percentage of users first
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Start with 1% of your user base and gradually increase to 100% 
-                while monitoring performance and user feedback.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                📊 Real-time Monitoring
-              </CardTitle>
-              <CardDescription>
-                Track key metrics and performance indicators
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Monitor error rates, response times, and user engagement 
-                in real-time to make informed deployment decisions.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                ⚡ Instant Rollback
-              </CardTitle>
-              <CardDescription>
-                Quickly revert changes if issues are detected
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                With a single click, rollback to the previous stable version 
-                if any problems arise during deployment.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-12 text-center">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Ready to get started?
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Our canary deployment system is designed to make your releases safer, 
-              faster, and more reliable. Start deploying with confidence today.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                View Documentation
-              </button>
-              <button className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                Contact Support
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GCPHeroInitialState />
     </div>
   );
 } 
