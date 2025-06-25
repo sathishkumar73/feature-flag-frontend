@@ -21,7 +21,7 @@ import {
   X,
   ChevronLeft
 } from 'lucide-react';
-import { apiGet } from '@/lib/apiClient';
+import { apiGet, apiPost } from '@/lib/apiClient';
 
 // =============================================================================
 // MOCK DATA - Replace with real API calls when onboarding UI is complete
@@ -202,11 +202,27 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
       const loadProjects = async () => {
         setLoading(true);
         try {
-          const response = await apiGet('/gcp/projects') as { projects: GCPProject[]; activeProject?: GCPProject };
+          const response = await apiGet('/gcp/projects') as { projects: GCPProject[] };
           setProjects(response.projects || []);
           console.log('[Onboarding] Projects loaded from backend:', response.projects);
-          if (response.activeProject) {
-            setSelectedProject(response.activeProject);
+          // Fetch selected projectId from new endpoint
+          console.log('[Onboarding] Calling GET /gcp/project-selection');
+          const selection = await apiGet<{ projectId: string | null }>('/gcp/project-selection');
+          console.log('[Onboarding] Response from GET /gcp/project-selection:', selection);
+          if (selection.projectId) {
+            const found = response.projects.find(p => p.projectId === selection.projectId) || null;
+            setSelectedProject(found);
+            if (found) {
+              console.log('[Onboarding] Active project found and set:', found);
+              // Auto-advance to next step after a short delay
+              setTimeout(() => {
+                transitionToStep(2);
+              }, 800);
+            } else {
+              console.log('[Onboarding] No matching project found for projectId:', selection.projectId);
+            }
+          } else {
+            console.log('[Onboarding] No active project found in response');
           }
         } catch (error) {
           console.error('Failed to load projects:', error);
@@ -276,13 +292,20 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   };
 
   // Step handlers with fluid transitions
-  const handleProjectSelect = (project: GCPProject) => {
+  const handleProjectSelect = async (project: GCPProject) => {
+    console.log('[Onboarding] User selected project:', project.projectName, '(', project.projectId, ')');
     setSelectedProject(project);
-    
+    // Make backend call to set selected project
+    try {
+      console.log('[Onboarding] Calling POST /gcp/project-selection with:', { projectId: project.projectId });
+      await apiPost('/gcp/project-selection', { projectId: project.projectId });
+      console.log('[Onboarding] Successfully set selected project in backend:', project.projectName);
+    } catch (error) {
+      console.error('[Onboarding] Failed to set selected project in backend:', error);
+    }
     // Persist project selection
     localStorage.setItem('canarySelectedProject', JSON.stringify(project));
     localStorage.setItem('canarySelectedProjectId', project.projectId);
-    
     // Auto-advance after selection with slight delay for better UX
     setTimeout(() => {
       transitionToStep(2);

@@ -10,6 +10,7 @@ interface ConnectionCardProps {
   connectionStatus: 'not-connected' | 'connected' | 'disconnected';
   currentStep?: number; // Optional prop to track current step
   isConnected?: boolean; // New prop to determine if user is already connected
+  isProjectSelected?: boolean; // New prop to determine if project is already selected
 }
 
 const ConnectionCard: React.FC<ConnectionCardProps> = ({ 
@@ -17,7 +18,8 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   onConnect, 
   connectionStatus,
   currentStep = 0,
-  isConnected = false
+  isConnected = false,
+  isProjectSelected = false // default to false
 }) => {
   const getStatusConfig = () => {
     switch (connectionStatus) {
@@ -54,11 +56,12 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
   // Calculate the effective current step based on connection status
   const getEffectiveCurrentStep = () => {
-    // If user is already connected, start from step 1 (project selection)
+    if (isConnected && isProjectSelected) {
+      return 2; // Both GCP and project are selected, move to next step
+    }
     if (isConnected) {
       return 1;
     }
-    // Otherwise use the provided currentStep (usually 0 for first-time users)
     return currentStep;
   };
 
