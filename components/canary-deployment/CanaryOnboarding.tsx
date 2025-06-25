@@ -24,7 +24,42 @@ import {
 import { apiGet, apiPost } from '@/lib/apiClient';
 
 // =============================================================================
-// MOCK DATA - Replace with real API calls when onboarding UI is complete
+// TYPES & INTERFACES
+// =============================================================================
+
+interface GCPProject {
+  projectId: string;
+  projectName: string;
+  projectNumber: string;
+  lifecycleState: string;
+  createTime: string;
+}
+
+interface GCPService {
+  name: string;
+  displayName: string;
+  required: boolean;
+  enabled: boolean;
+  status: string;
+  description: string;
+  estimatedTime: number;
+}
+
+interface CanaryOnboardingProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onComplete?: (deploymentUrl: string) => void;
+  initialStep?: number; // Step to start at (1=auth, 2=project, 3=deployment)
+}
+
+interface StepConfig {
+  title: string;
+  subtitle: string;
+  emoji: string;
+}
+
+// =============================================================================
+// MOCK DATA & API CALLS
 // =============================================================================
 
 const MOCK_PROJECTS = [
@@ -59,7 +94,7 @@ const MOCK_SERVICES = [
     enabled: false,
     status: 'pending',
     description: 'Required for deploying the canary proxy service',
-    estimatedTime: 3000 // 3 seconds
+    estimatedTime: 3000
   },
   {
     name: 'storage-api',
@@ -68,7 +103,7 @@ const MOCK_SERVICES = [
     enabled: true,
     status: 'enabled',
     description: 'Required for accessing stable/ and canary/ build artifacts',
-    estimatedTime: 0 // Already enabled
+    estimatedTime: 0
   },
   {
     name: 'cloudbuild',
@@ -77,7 +112,7 @@ const MOCK_SERVICES = [
     enabled: false,
     status: 'pending',
     description: 'Required for building and deploying the proxy container',
-    estimatedTime: 2500 // 2.5 seconds
+    estimatedTime: 2500
   },
   {
     name: 'monitoring',
@@ -86,7 +121,7 @@ const MOCK_SERVICES = [
     enabled: false,
     status: 'pending',
     description: 'Required for metrics collection and health monitoring',
-    estimatedTime: 2000 // 2 seconds
+    estimatedTime: 2000
   },
   {
     name: 'iam',
@@ -95,11 +130,11 @@ const MOCK_SERVICES = [
     enabled: false,
     status: 'pending',
     description: 'Required for service account and permissions management',
-    estimatedTime: 1500 // 1.5 seconds
+    estimatedTime: 1500
   }
 ];
 
-// Mock functions with realistic delays
+// Mock API calls with realistic delays
 const mockApiCalls = {
   simulateOAuthSuccess: () => {
     return new Promise((resolve) => {
@@ -130,41 +165,515 @@ const mockApiCalls = {
 };
 
 // =============================================================================
-// END MOCK DATA
+// STEP COMPONENTS
 // =============================================================================
 
-interface GCPProject {
-  projectId: string;
-  projectName: string;
-  projectNumber: string;
-  lifecycleState: string;
-  createTime: string;
+// Step 0: OAuth Connection
+interface ConnectionStepProps {
+  loading: boolean;
+  onConnect: () => void;
 }
 
-interface GCPService {
-  name: string;
-  displayName: string;
-  required: boolean;
-  enabled: boolean;
-  status: string;
-  description: string;
-  estimatedTime: number;
+const ConnectionStep: React.FC<ConnectionStepProps> = ({ loading, onConnect }) => (
+  <div className="text-center space-y-6">
+    <Alert className="max-w-md mx-auto">
+      <Sparkles className="h-4 w-4" />
+      <AlertDescription>
+        <strong>Demo Mode:</strong> This is a complete UI mockup with realistic animations
+      </AlertDescription>
+    </Alert>
+
+    <div className="space-y-6">
+      <div className="flex justify-center">
+        <div className={`rounded-2xl bg-muted p-6 transition-all duration-300 ${
+          loading ? 'animate-pulse' : 'hover:bg-accent'
+        }`}>
+          <div className="relative">
+            <Cloud className="h-10 w-10 text-muted-foreground" />
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <Button 
+        onClick={onConnect}
+        disabled={loading}
+        size="lg"
+        className="px-6 py-3 font-semibold hover:scale-105 transition-transform duration-200"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Connecting to Google Cloud...
+          </>
+        ) : (
+          <>
+            <Cloud className="mr-2 h-4 w-4" />
+            Connect with Google Cloud
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+      
+      <p className="text-xs text-muted-foreground flex items-center justify-center">
+        <Shield className="mr-1 h-3 w-3" />
+        Secure OAuth 2.0 authentication
+      </p>
+    </div>
+  </div>
+);
+
+// Step 1: Project Selection
+interface ProjectSelectionStepProps {
+  projects: GCPProject[];
+  selectedProject: GCPProject | null;
+  loading: boolean;
+  onProjectSelect: (project: GCPProject) => void;
 }
 
-interface CanaryOnboardingProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onComplete?: (deploymentUrl: string) => void;
-  initialStep?: number; // Optional prop to start at a specific step
+const ProjectSelectionStep: React.FC<ProjectSelectionStepProps> = ({ 
+  projects, 
+  selectedProject, 
+  loading, 
+  onProjectSelect 
+}) => {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin text-4xl mb-4">⏳</div>
+        <div className="text-lg text-muted-foreground">Loading your GCP projects...</div>
+      </div>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-6 py-12">
+        <div className="text-6xl">🚧</div>
+        <h2 className="text-2xl font-semibold">No projects found</h2>
+        <p className="text-gray-500 text-center max-w-md">
+          We couldn&apos;t find any GCP projects for your account.<br />
+          Please create a project in your Google Cloud Console and try again.
+        </p>
+        <Button
+          onClick={() => window.location.reload()}
+          size="lg"
+          className="px-6 py-3 mt-2"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3">
+        {projects.map((project, index) => (
+          <Card
+            key={project.projectId}
+            className={`cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md animate-in slide-in-from-left duration-500 ${
+              selectedProject?.projectId === project.projectId
+                ? 'ring-2 ring-primary bg-accent scale-[1.01] shadow-md'
+                : ''
+            }`}
+            style={{ animationDelay: `${index * 100}ms` }}
+            onClick={() => onProjectSelect(project)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h3 className="font-medium">{project.projectName}</h3>
+                  <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-1">
+                      <Hash className="h-3 w-3" />
+                      <code className="bg-muted px-1 py-0.5 rounded">{project.projectId}</code>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="text-xs">{project.lifecycleState}</Badge>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                    selectedProject?.projectId === project.projectId
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground'
+                  }`}>
+                    {selectedProject?.projectId === project.projectId && (
+                      <CheckCircle className="h-3 w-3 text-primary-foreground animate-in zoom-in duration-200" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {selectedProject && (
+        <div className="text-center animate-in slide-in-from-bottom duration-500">
+          <p className="text-sm text-muted-foreground">
+            Great choice! Setting up <strong>{selectedProject.projectName}</strong>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Step 2: Enable Services
+interface ServicesStepProps {
+  services: GCPService[];
+  selectedProject: GCPProject | null;
+  enablingServices: boolean;
+  currentlyEnabling: string | null;
+  onEnableServices: () => void;
 }
+
+const ServicesStep: React.FC<ServicesStepProps> = ({ 
+  services, 
+  selectedProject, 
+  enablingServices, 
+  currentlyEnabling, 
+  onEnableServices 
+}) => (
+  <div className="space-y-6">
+    <div className="text-center">
+      <p className="text-sm text-muted-foreground">
+        Selected project: <strong>{selectedProject?.projectName}</strong>
+      </p>
+    </div>
+    
+    <div className="space-y-3">
+      {services.map((service, index) => {
+        const isCurrentlyEnabling = currentlyEnabling === service.name;
+        const isEnabling = service.status === 'enabling';
+        
+        return (
+          <div
+            key={service.name}
+            className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-300 animate-in slide-in-from-right ${
+              service.enabled 
+                ? 'bg-green-50/50 border-green-200' 
+                : isEnabling 
+                  ? 'bg-blue-50/50 border-blue-200' 
+                  : 'hover:bg-accent'
+            }`}
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <div className="flex items-center space-x-3">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
+                service.enabled 
+                  ? 'bg-green-100' 
+                  : isEnabling 
+                    ? 'bg-blue-100' 
+                    : 'bg-muted'
+              }`}>
+                {service.enabled ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600 animate-in zoom-in duration-200" />
+                ) : isEnabling ? (
+                  <Loader2 className="h-3 w-3 text-blue-600 animate-spin" />
+                ) : (
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                )}
+              </div>
+              <div>
+                <h4 className="font-medium text-sm">{service.displayName}</h4>
+                <p className="text-xs text-muted-foreground">{service.description}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge 
+                variant={service.enabled ? "default" : isEnabling ? "secondary" : "secondary"}
+                className={`text-xs ${
+                  service.enabled 
+                    ? "bg-green-100 text-green-800" 
+                    : isEnabling 
+                      ? "bg-blue-100 text-blue-800" 
+                      : ""
+                }`}
+              >
+                {service.enabled ? 'Ready' : isEnabling ? 'Enabling...' : 'Pending'}
+              </Badge>
+              {isCurrentlyEnabling && (
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {enablingServices && (
+      <div className="text-center space-y-3 animate-in fade-in duration-500">
+        <div className="flex items-center justify-center space-x-2">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span className="text-sm font-medium">
+            Enabling services...
+          </span>
+        </div>
+        {currentlyEnabling && (
+          <p className="text-xs text-muted-foreground">
+            Currently enabling: <strong>{services.find(s => s.name === currentlyEnabling)?.displayName}</strong>
+          </p>
+        )}
+      </div>
+    )}
+
+    <div className="text-center">
+      <Button 
+        onClick={onEnableServices} 
+        disabled={enablingServices}
+        size="lg"
+        className="px-6 py-3 hover:scale-105 transition-transform duration-200"
+      >
+        {enablingServices ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Enabling services...
+          </>
+        ) : (
+          <>
+            <Shield className="mr-2 h-4 w-4" />
+            Enable all services
+            <Zap className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+    </div>
+  </div>
+);
+
+// Step 3: Create Bucket
+interface BucketStepProps {
+  selectedProject: GCPProject | null;
+  loading: boolean;
+  onCreateBucket: () => void;
+}
+
+const BucketStep: React.FC<BucketStepProps> = ({ selectedProject, loading, onCreateBucket }) => (
+  <div className="space-y-6">
+    <Card className="animate-in slide-in-from-bottom duration-500">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <Folder className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-medium">Storage Configuration</h3>
+              <p className="text-sm text-muted-foreground">Perfect setup for your builds</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between p-2 bg-muted rounded">
+              <span>Bucket:</span>
+              <code className="text-xs">canary-assets-{selectedProject?.projectId}</code>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-muted rounded">
+              <span>Structure:</span>
+              <div className="flex space-x-1">
+                <code className="text-xs">stable/</code>
+                <code className="text-xs">canary/</code>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-muted rounded">
+              <span>Region:</span>
+              <span className="text-xs">us-central1</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <div className="text-center">
+      <Button 
+        onClick={onCreateBucket} 
+        disabled={loading}
+        size="lg"
+        className="px-6 py-3 hover:scale-105 transition-transform duration-200"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Creating storage...
+          </>
+        ) : (
+          <>
+            <Folder className="mr-2 h-4 w-4" />
+            Create storage bucket
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+    </div>
+  </div>
+);
+
+// Step 4: Deploy Proxy
+interface DeployStepProps {
+  selectedProject: GCPProject | null;
+  bucketName: string;
+  loading: boolean;
+  onDeploy: () => void;
+}
+
+const DeployStep: React.FC<DeployStepProps> = ({ selectedProject, bucketName, loading, onDeploy }) => (
+  <div className="space-y-6">
+    <Card className="animate-in slide-in-from-bottom duration-500">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+              <Zap className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="font-medium">Final Step</h3>
+              <p className="text-sm text-muted-foreground">Deploying your intelligent canary proxy</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="space-y-1">
+              <div className="text-muted-foreground">Project</div>
+              <div className="font-medium text-xs">{selectedProject?.projectName}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-muted-foreground">Storage</div>
+              <div className="font-mono text-xs">{bucketName}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-muted-foreground">Service</div>
+              <div className="font-medium text-xs">Cloud Run</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-muted-foreground">Region</div>
+              <div className="font-medium text-xs">us-central1</div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {loading && (
+      <div className="text-center animate-in fade-in duration-500">
+        <div className="mb-3">
+          <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
+        </div>
+        <p className="font-medium text-sm">Deploying your canary proxy...</p>
+        <p className="text-xs text-muted-foreground">This usually takes 2-3 minutes</p>
+      </div>
+    )}
+
+    <div className="text-center">
+      <Button 
+        onClick={onDeploy} 
+        disabled={loading}
+        size="lg"
+        className="px-6 py-3 hover:scale-105 transition-transform duration-200"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Deploying...
+          </>
+        ) : (
+          <>
+            <Play className="mr-2 h-4 w-4" />
+            Deploy canary proxy
+            <Zap className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+    </div>
+  </div>
+);
+
+// Step 5: Success
+interface SuccessStepProps {
+  selectedProject: GCPProject | null;
+  bucketName: string;
+  deploymentUrl: string;
+  onComplete: () => void;
+}
+
+const SuccessStep: React.FC<SuccessStepProps> = ({ 
+  selectedProject, 
+  bucketName, 
+  deploymentUrl, 
+  onComplete 
+}) => (
+  <div className="text-center space-y-6">
+    <div className="animate-in zoom-in duration-700">
+      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+        <CheckCircle className="h-8 w-8 text-primary animate-in zoom-in duration-500 delay-200" />
+      </div>
+    </div>
+
+    <Card className="animate-in slide-in-from-bottom duration-500 delay-300">
+      <CardContent className="p-6">
+        <h3 className="font-medium mb-4">🎯 Your Setup Details</h3>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between items-center p-2 bg-muted rounded">
+            <span className="text-muted-foreground">Project:</span>
+            <span className="font-medium text-xs">{selectedProject?.projectName}</span>
+          </div>
+          <div className="flex justify-between items-center p-2 bg-muted rounded">
+            <span className="text-muted-foreground">Storage:</span>
+            <code className="text-xs">{bucketName}</code>
+          </div>
+          <div className="flex justify-between items-center p-2 bg-muted rounded">
+            <span className="text-muted-foreground">Service URL:</span>
+            <code className="text-xs max-w-48 truncate">{deploymentUrl}</code>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <div className="flex justify-center space-x-3 animate-in slide-in-from-bottom duration-500 delay-500">
+      <Button className="px-4 hover:scale-105 transition-transform duration-200">
+        <ExternalLink className="mr-2 h-4 w-4" />
+        Open GCP Console
+      </Button>
+      <Button 
+        variant="outline" 
+        className="px-4 hover:scale-105 transition-transform duration-200"
+        onClick={onComplete}
+      >
+        Close & Continue
+      </Button>
+    </div>
+
+    <p className="text-xs text-muted-foreground animate-in fade-in duration-500 delay-700">
+      🚀 Ready to start deploying with confidence!
+    </p>
+  </div>
+);
+
+// =============================================================================
+// MAIN ONBOARDING COMPONENT
+// =============================================================================
 
 const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({ 
   isOpen, 
   onClose, 
   onComplete,
-  initialStep = 0
+  initialStep = 1 // Default to step 1 (authentication)
 }) => {
-  const [currentStep, setCurrentStep] = useState(initialStep);
+  // Convert initialStep to internal step format (0-based)
+  const getInternalStep = (externalStep: number) => {
+    switch(externalStep) {
+      case 1: return 0; // Authentication -> Step 0
+      case 2: return 1; // Project Selection -> Step 1  
+      case 3: return 2; // Deployment (skip to services) -> Step 2
+      default: return 0; // Default to authentication
+    }
+  };
+
+  const [currentStep, setCurrentStep] = useState(getInternalStep(initialStep));
   const [projects, setProjects] = useState<GCPProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<GCPProject | null>(null);
   const [services, setServices] = useState<GCPService[]>(MOCK_SERVICES);
@@ -178,51 +687,69 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
 
   const hasFetchedProjects = useRef(false);
 
-  // Reset state when modal opens
+  // Reset state when modal opens or initialStep changes
   useEffect(() => {
     if (isOpen) {
-      setCurrentStep(initialStep);
+      const internalStep = getInternalStep(initialStep);
+      console.log('[CanaryOnboarding] Modal opened with initialStep:', initialStep, 'mapped to internal step:', internalStep);
+      
+      setCurrentStep(internalStep);
       setProjects([]);
       setSelectedProject(null);
       setServices(MOCK_SERVICES);
       setLoading(false);
       setDeploymentUrl('');
       setAnimatingNext(false);
-      setProgressPercent(0);
+      setProgressPercent((internalStep / 5) * 100); // Set progress based on initial step
       setEnablingServices(false);
       setCurrentlyEnabling(null);
       setBucketName('');
+      hasFetchedProjects.current = false;
     }
   }, [isOpen, initialStep]);
 
-  // Load projects when entering the project selection step (only once per modal open)
+  // Load projects when entering project selection step or when starting at step 2
   useEffect(() => {
-    if (isOpen && currentStep === 1 && projects.length === 0 && !hasFetchedProjects.current) {
+    const shouldLoadProjects = isOpen && 
+      (currentStep === 1 || (currentStep >= 1 && initialStep === 2)) && 
+      projects.length === 0 && 
+      !hasFetchedProjects.current;
+
+    if (shouldLoadProjects) {
       hasFetchedProjects.current = true;
       const loadProjects = async () => {
         setLoading(true);
         try {
+          console.log('[CanaryOnboarding] Loading projects...');
           const response = await apiGet('/gcp/projects') as { projects: GCPProject[] };
           setProjects(response.projects || []);
-          console.log('[Onboarding] Projects loaded from backend:', response.projects);
-          // Fetch selected projectId from new endpoint
-          console.log('[Onboarding] Calling GET /gcp/project-selection');
+          console.log('[CanaryOnboarding] Projects loaded from backend:', response.projects);
+          
+          // Check for selected project
+          console.log('[CanaryOnboarding] Calling GET /gcp/project-selection');
           const selection = await apiGet<{ projectId: string | null }>('/gcp/project-selection');
-          console.log('[Onboarding] Response from GET /gcp/project-selection:', selection);
+          console.log('[CanaryOnboarding] Response from GET /gcp/project-selection:', selection);
+          
           if (selection.projectId) {
             const found = response.projects.find(p => p.projectId === selection.projectId) || null;
             setSelectedProject(found);
             if (found) {
-              console.log('[Onboarding] Active project found and set:', found);
-              // Auto-advance to next step after a short delay
-              setTimeout(() => {
-                transitionToStep(2);
-              }, 800);
-            } else {
-              console.log('[Onboarding] No matching project found for projectId:', selection.projectId);
+              console.log('[CanaryOnboarding] Active project found and set:', found);
+              // If we're starting at step 2 (project selection) but already have a project selected,
+              // auto-advance to next step after a short delay
+              if (initialStep === 2) {
+                setTimeout(() => {
+                  transitionToStep(2); // Move to services step
+                }, 800);
+              } else if (currentStep === 1) {
+                // Normal flow from step 1
+                setTimeout(() => {
+                  transitionToStep(2);
+                }, 800);
+              }
             }
           } else {
-            console.log('[Onboarding] No active project found in response');
+            console.log('[CanaryOnboarding] No active project found in response');
           }
         } catch (error) {
           console.error('Failed to load projects:', error);
@@ -232,17 +759,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
       };
       loadProjects();
     }
-    if (!isOpen) {
-      hasFetchedProjects.current = false; // reset when modal closes
-    }
-  }, [isOpen, currentStep, projects.length]);
-
-  // Log projects only when they change
-  useEffect(() => {
-    if (currentStep === 1) {
-      console.log('[Onboarding] Rendering project selection step, projects:', projects);
-    }
-  }, [projects, currentStep]);
+  }, [isOpen, currentStep, projects.length, initialStep]);
 
   // Smooth progress animation
   useEffect(() => {
@@ -261,8 +778,46 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     return () => clearInterval(progressTimer);
   }, [currentStep]);
 
+  // Get step configuration
+  const getStepConfig = (): StepConfig => {
+    const configs = [
+      {
+        title: "Let's get you set up! 👋",
+        subtitle: "Connect your Google Cloud account to start deploying canary proxies",
+        emoji: "☁️"
+      },
+      {
+        title: "Choose your project",
+        subtitle: `We found ${projects.length} projects. Which one would you like to use?`,
+        emoji: "🏗️"
+      },
+      {
+        title: "Enable required services",
+        subtitle: "We'll automatically enable the APIs you need",
+        emoji: "⚙️"
+      },
+      {
+        title: "Create storage bucket",
+        subtitle: "Setting up storage for your builds",
+        emoji: "📦"
+      },
+      {
+        title: "Deploy your proxy",
+        subtitle: "Almost there! Deploying your canary proxy service",
+        emoji: "🚀"
+      },
+      {
+        title: "All done! 🎉",
+        subtitle: "Your canary deployment system is ready",
+        emoji: "✨"
+      }
+    ];
+    return configs[currentStep] || configs[0];
+  };
+
   // Smooth step transition
   const transitionToStep = (nextStep: number) => {
+    console.log('[CanaryOnboarding] Transitioning to step:', nextStep);
     setAnimatingNext(true);
     setTimeout(() => {
       setCurrentStep(nextStep);
@@ -277,10 +832,11 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     }
   };
 
-  // Mock OAuth Connection
+  // Step handlers
   const handleConnect = async () => {
     setLoading(true);
     try {
+      console.log('[CanaryOnboarding] Simulating OAuth connection...');
       const mockProjects = await mockApiCalls.simulateOAuthSuccess();
       setProjects(mockProjects as GCPProject[]);
       transitionToStep(1);
@@ -291,28 +847,29 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     }
   };
 
-  // Step handlers with fluid transitions
   const handleProjectSelect = async (project: GCPProject) => {
-    console.log('[Onboarding] User selected project:', project.projectName, '(', project.projectId, ')');
+    console.log('[CanaryOnboarding] User selected project:', project.projectName, '(', project.projectId, ')');
     setSelectedProject(project);
+    
     // Make backend call to set selected project
     try {
-      console.log('[Onboarding] Calling POST /gcp/project-selection with:', { projectId: project.projectId });
+      console.log('[CanaryOnboarding] Calling POST /gcp/project-selection with:', { projectId: project.projectId });
       await apiPost('/gcp/project-selection', { projectId: project.projectId });
-      console.log('[Onboarding] Successfully set selected project in backend:', project.projectName);
+      console.log('[CanaryOnboarding] Successfully set selected project in backend:', project.projectName);
     } catch (error) {
-      console.error('[Onboarding] Failed to set selected project in backend:', error);
+      console.error('[CanaryOnboarding] Failed to set selected project in backend:', error);
     }
+    
     // Persist project selection
     localStorage.setItem('canarySelectedProject', JSON.stringify(project));
     localStorage.setItem('canarySelectedProjectId', project.projectId);
+    
     // Auto-advance after selection with slight delay for better UX
     setTimeout(() => {
       transitionToStep(2);
     }, 800);
   };
 
-  // Enhanced service enabling - one by one
   const handleEnableServices = async () => {
     setEnablingServices(true);
     
@@ -361,6 +918,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   const handleCreateBucket = async () => {
     setLoading(true);
     try {
+      console.log('[CanaryOnboarding] Creating storage bucket...');
       const result = await mockApiCalls.createBucket();
       setBucketName((result as unknown as { bucketName: string }).bucketName);
       transitionToStep(4);
@@ -374,6 +932,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   const handleDeployProxy = async () => {
     setLoading(true);
     try {
+      console.log('[CanaryOnboarding] Deploying canary proxy...');
       const result = await mockApiCalls.deployProxy();
       setDeploymentUrl((result as unknown as { serviceUrl: string }).serviceUrl);
       transitionToStep(5);
@@ -385,6 +944,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   };
 
   const handleComplete = () => {
+    console.log('[CanaryOnboarding] Onboarding completed with URL:', deploymentUrl);
     // Persist onboarding completion
     localStorage.setItem('canaryOnboardingComplete', 'true');
     
@@ -392,42 +952,6 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
       onComplete(deploymentUrl);
     }
     onClose();
-  };
-
-  const getStepConfig = () => {
-    const configs = [
-      {
-        title: "Let's get you set up! 👋",
-        subtitle: "Connect your Google Cloud account to start deploying canary proxies",
-        emoji: "☁️"
-      },
-      {
-        title: "Choose your project",
-        subtitle: `We found ${projects.length} projects. Which one would you like to use?`,
-        emoji: "🏗️"
-      },
-      {
-        title: "Enable required services",
-        subtitle: "We'll automatically enable the APIs you need",
-        emoji: "⚙️"
-      },
-      {
-        title: "Create storage bucket",
-        subtitle: "Setting up storage for your builds",
-        emoji: "📦"
-      },
-      {
-        title: "Deploy your proxy",
-        subtitle: "Almost there! Deploying your canary proxy service",
-        emoji: "🚀"
-      },
-      {
-        title: "All done! 🎉",
-        subtitle: "Your canary deployment system is ready",
-        emoji: "✨"
-      }
-    ];
-    return configs[currentStep] || configs[0];
   };
 
   const stepConfig = getStepConfig();
@@ -523,433 +1047,60 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                 
                 {/* Step 0: Initial Connection */}
                 {currentStep === 0 && (
-                  <div className="text-center space-y-6">
-                    <Alert className="max-w-md mx-auto">
-                      <Sparkles className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Demo Mode:</strong> This is a complete UI mockup with realistic animations
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="space-y-6">
-                      <div className="flex justify-center">
-                        <div className={`rounded-2xl bg-muted p-6 transition-all duration-300 ${
-                          loading ? 'animate-pulse' : 'hover:bg-accent'
-                        }`}>
-                          <div className="relative">
-                            <Cloud className="h-10 w-10 text-muted-foreground" />
-                            {loading && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        onClick={handleConnect}
-                        disabled={loading}
-                        size="lg"
-                        className="px-6 py-3 font-semibold hover:scale-105 transition-transform duration-200"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Connecting to Google Cloud...
-                          </>
-                        ) : (
-                          <>
-                            <Cloud className="mr-2 h-4 w-4" />
-                            Connect with Google Cloud
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                      
-                      <p className="text-xs text-muted-foreground flex items-center justify-center">
-                        <Shield className="mr-1 h-3 w-3" />
-                        Secure OAuth 2.0 authentication
-                      </p>
-                    </div>
-                  </div>
+                  <ConnectionStep 
+                    loading={loading}
+                    onConnect={handleConnect}
+                  />
                 )}
 
                 {/* Step 1: Project Selection */}
                 {currentStep === 1 && (
-                  (() => {
-                    if (loading) {
-                      return (
-                        <div className="flex flex-col items-center justify-center py-12">
-                          <div className="animate-spin text-4xl mb-4">⏳</div>
-                          <div className="text-lg text-muted-foreground">Loading your GCP projects...</div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div className="space-y-4">
-                        {projects.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center space-y-6 py-12">
-                            <div className="text-6xl">🚧</div>
-                            <h2 className="text-2xl font-semibold">No projects found</h2>
-                            <p className="text-gray-500 text-center max-w-md">
-                              We couldn&apos;t find any GCP projects for your account.<br />
-                              Please create a project in your Google Cloud Console and try again.
-                            </p>
-                            <Button
-                              onClick={() => window.location.reload()}
-                              size="lg"
-                              className="px-6 py-3 mt-2"
-                            >
-                              Retry
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="grid gap-3">
-                              {projects.map((project, index) => (
-                                <Card
-                                  key={project.projectId}
-                                  className={`cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md animate-in slide-in-from-left duration-500 ${
-                                    selectedProject?.projectId === project.projectId
-                                      ? 'ring-2 ring-primary bg-accent scale-[1.01] shadow-md'
-                                      : ''
-                                  }`}
-                                  style={{ animationDelay: `${index * 100}ms` }}
-                                  onClick={() => handleProjectSelect(project)}
-                                >
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div className="space-y-1">
-                                        <h3 className="font-medium">{project.projectName}</h3>
-                                        <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                                          <div className="flex items-center space-x-1">
-                                            <Hash className="h-3 w-3" />
-                                            <code className="bg-muted px-1 py-0.5 rounded">{project.projectId}</code>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center space-x-2">
-                                        <Badge variant="secondary" className="text-xs">{project.lifecycleState}</Badge>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                                          selectedProject?.projectId === project.projectId
-                                            ? 'border-primary bg-primary'
-                                            : 'border-muted-foreground'
-                                        }`}>
-                                          {selectedProject?.projectId === project.projectId && (
-                                            <CheckCircle className="h-3 w-3 text-primary-foreground animate-in zoom-in duration-200" />
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                            {selectedProject && (
-                              <div className="text-center animate-in slide-in-from-bottom duration-500">
-                                <p className="text-sm text-muted-foreground">
-                                  Great choice! Setting up <strong>{selectedProject.projectName}</strong>
-                                </p>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })()
+                  <ProjectSelectionStep 
+                    projects={projects}
+                    selectedProject={selectedProject}
+                    loading={loading}
+                    onProjectSelect={handleProjectSelect}
+                  />
                 )}
 
-                {/* Step 2: Enable Services - Enhanced with one-by-one enabling */}
+                {/* Step 2: Enable Services */}
                 {currentStep === 2 && (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Selected project: <strong>{selectedProject?.projectName}</strong>
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {services.map((service, index) => {
-                        const isCurrentlyEnabling = currentlyEnabling === service.name;
-                        const isEnabling = service.status === 'enabling';
-                        
-                        return (
-                          <div
-                            key={service.name}
-                            className={`flex items-center justify-between p-3 border rounded-lg transition-all duration-300 animate-in slide-in-from-right ${
-                              service.enabled 
-                                ? 'bg-green-50/50 border-green-200' 
-                                : isEnabling 
-                                  ? 'bg-blue-50/50 border-blue-200' 
-                                  : 'hover:bg-accent'
-                            }`}
-                            style={{ animationDelay: `${index * 100}ms` }}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                service.enabled 
-                                  ? 'bg-green-100' 
-                                  : isEnabling 
-                                    ? 'bg-blue-100' 
-                                    : 'bg-muted'
-                              }`}>
-                                {service.enabled ? (
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 animate-in zoom-in duration-200" />
-                                ) : isEnabling ? (
-                                  <Loader2 className="h-3 w-3 text-blue-600 animate-spin" />
-                                ) : (
-                                  <Clock className="h-3 w-3 text-muted-foreground" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-sm">{service.displayName}</h4>
-                                <p className="text-xs text-muted-foreground">{service.description}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Badge 
-                                variant={service.enabled ? "default" : isEnabling ? "secondary" : "secondary"}
-                                className={`text-xs ${
-                                  service.enabled 
-                                    ? "bg-green-100 text-green-800" 
-                                    : isEnabling 
-                                      ? "bg-blue-100 text-blue-800" 
-                                      : ""
-                                }`}
-                              >
-                                {service.enabled ? 'Ready' : isEnabling ? 'Enabling...' : 'Pending'}
-                              </Badge>
-                              {isCurrentlyEnabling && (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Show progress when enabling services */}
-                    {enablingServices && (
-                      <div className="text-center space-y-3 animate-in fade-in duration-500">
-                        <div className="flex items-center justify-center space-x-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                          <span className="text-sm font-medium">
-                            Enabling services...
-                          </span>
-                        </div>
-                        {currentlyEnabling && (
-                          <p className="text-xs text-muted-foreground">
-                            Currently enabling: <strong>{services.find(s => s.name === currentlyEnabling)?.displayName}</strong>
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="text-center">
-                      <Button 
-                        onClick={handleEnableServices} 
-                        disabled={enablingServices}
-                        size="lg"
-                        className="px-6 py-3 hover:scale-105 transition-transform duration-200"
-                      >
-                        {enablingServices ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Enabling services...
-                          </>
-                        ) : (
-                          <>
-                            <Shield className="mr-2 h-4 w-4" />
-                            Enable all services
-                            <Zap className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                  <ServicesStep 
+                    services={services}
+                    selectedProject={selectedProject}
+                    enablingServices={enablingServices}
+                    currentlyEnabling={currentlyEnabling}
+                    onEnableServices={handleEnableServices}
+                  />
                 )}
 
                 {/* Step 3: Create Bucket */}
                 {currentStep === 3 && (
-                  <div className="space-y-6">
-                    <Card className="animate-in slide-in-from-bottom duration-500">
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Folder className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium">Storage Configuration</h3>
-                              <p className="text-sm text-muted-foreground">Perfect setup for your builds</p>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between p-2 bg-muted rounded">
-                              <span>Bucket:</span>
-                              <code className="text-xs">canary-assets-{selectedProject?.projectId}</code>
-                            </div>
-                            <div className="flex items-center justify-between p-2 bg-muted rounded">
-                              <span>Structure:</span>
-                              <div className="flex space-x-1">
-                                <code className="text-xs">stable/</code>
-                                <code className="text-xs">canary/</code>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between p-2 bg-muted rounded">
-                              <span>Region:</span>
-                              <span className="text-xs">us-central1</span>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="text-center">
-                      <Button 
-                        onClick={handleCreateBucket} 
-                        disabled={loading}
-                        size="lg"
-                        className="px-6 py-3 hover:scale-105 transition-transform duration-200"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating storage...
-                          </>
-                        ) : (
-                          <>
-                            <Folder className="mr-2 h-4 w-4" />
-                            Create storage bucket
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                  <BucketStep 
+                    selectedProject={selectedProject}
+                    loading={loading}
+                    onCreateBucket={handleCreateBucket}
+                  />
                 )}
 
                 {/* Step 4: Deploy Proxy */}
                 {currentStep === 4 && (
-                  <div className="space-y-6">
-                    <Card className="animate-in slide-in-from-bottom duration-500">
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                              <Zap className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium">Final Step</h3>
-                              <p className="text-sm text-muted-foreground">Deploying your intelligent canary proxy</p>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="space-y-1">
-                              <div className="text-muted-foreground">Project</div>
-                              <div className="font-medium text-xs">{selectedProject?.projectName}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-muted-foreground">Storage</div>
-                              <div className="font-mono text-xs">{bucketName}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-muted-foreground">Service</div>
-                              <div className="font-medium text-xs">Cloud Run</div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-muted-foreground">Region</div>
-                              <div className="font-medium text-xs">us-central1</div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {loading && (
-                      <div className="text-center animate-in fade-in duration-500">
-                        <div className="mb-3">
-                          <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
-                        </div>
-                        <p className="font-medium text-sm">Deploying your canary proxy...</p>
-                        <p className="text-xs text-muted-foreground">This usually takes 2-3 minutes</p>
-                      </div>
-                    )}
-
-                    <div className="text-center">
-                      <Button 
-                        onClick={handleDeployProxy} 
-                        disabled={loading}
-                        size="lg"
-                        className="px-6 py-3 hover:scale-105 transition-transform duration-200"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Deploying...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="mr-2 h-4 w-4" />
-                            Deploy canary proxy
-                            <Zap className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                  <DeployStep 
+                    selectedProject={selectedProject}
+                    bucketName={bucketName}
+                    loading={loading}
+                    onDeploy={handleDeployProxy}
+                  />
                 )}
 
                 {/* Step 5: Success */}
                 {currentStep === 5 && (
-                  <div className="text-center space-y-6">
-                    <div className="animate-in zoom-in duration-700">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                        <CheckCircle className="h-8 w-8 text-primary animate-in zoom-in duration-500 delay-200" />
-                      </div>
-                    </div>
-
-                    <Card className="animate-in slide-in-from-bottom duration-500 delay-300">
-                      <CardContent className="p-6">
-                        <h3 className="font-medium mb-4">🎯 Your Setup Details</h3>
-                        <div className="space-y-3 text-sm">
-                          <div className="flex justify-between items-center p-2 bg-muted rounded">
-                            <span className="text-muted-foreground">Project:</span>
-                            <span className="font-medium text-xs">{selectedProject?.projectName}</span>
-                          </div>
-                          <div className="flex justify-between items-center p-2 bg-muted rounded">
-                            <span className="text-muted-foreground">Storage:</span>
-                            <code className="text-xs">{bucketName}</code>
-                          </div>
-                          <div className="flex justify-between items-center p-2 bg-muted rounded">
-                            <span className="text-muted-foreground">Service URL:</span>
-                            <code className="text-xs max-w-48 truncate">{deploymentUrl}</code>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="flex justify-center space-x-3 animate-in slide-in-from-bottom duration-500 delay-500">
-                      <Button className="px-4 hover:scale-105 transition-transform duration-200">
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Open GCP Console
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="px-4 hover:scale-105 transition-transform duration-200"
-                        onClick={handleComplete}
-                      >
-                        Close & Continue
-                      </Button>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground animate-in fade-in duration-500 delay-700">
-                      🚀 Ready to start deploying with confidence!
-                    </p>
-                  </div>
+                  <SuccessStep 
+                    selectedProject={selectedProject}
+                    bucketName={bucketName}
+                    deploymentUrl={deploymentUrl}
+                    onComplete={handleComplete}
+                  />
                 )}
               </div>
             </div>

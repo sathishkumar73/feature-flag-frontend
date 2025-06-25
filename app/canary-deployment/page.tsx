@@ -44,77 +44,40 @@ const getSelectedProject = async (projects: GCPProject[]) => {
   }
 };
 
-const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: boolean, initialStep?: number) => void; }) => {
+const GCPHeroInitialState = ({ 
+  setShowOnboarding, 
+  isConnected, 
+  activeProject,
+  projects
+}: { 
+  setShowOnboarding: (show: boolean, initialStep?: number) => void;
+  isConnected: boolean;
+  activeProject: GCPProject | null;
+  projects: GCPProject[];
+}) => {
   const [loading] = useState(false);
   const [error] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [projects, setProjects] = useState<GCPProject[]>([]);
-  const [activeProject, setActiveProject] = useState<GCPProject | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  // Get user ID from Supabase session
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    getUser();
-  }, []);
 
   // Check onboarding completion status
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const onboardingComplete = localStorage.getItem('canaryOnboardingComplete');
-      const selectedProjectData = localStorage.getItem('canarySelectedProject');
-      
       setHasCompletedOnboarding(onboardingComplete === 'true');
-      
-      // If we have a selected project in localStorage, set it
-      if (selectedProjectData) {
-        try {
-          const project = JSON.parse(selectedProjectData);
-          setActiveProject(project);
-        } catch (error) {
-          console.error('Error parsing saved project:', error);
-        }
-      }
     }
   }, []);
 
-  // Check if user is connected to GCP
-  useEffect(() => {
-    const checkConnection = async () => {
-      if (!userId) return;
-      try {
-        console.log('[CanaryDeployment] Calling GET /gcp/projects (connection check)');
-        const data = await apiGet<GCPProjectsResponse>('/gcp/projects');
-        console.log('[CanaryDeployment] Response from GET /gcp/projects (connection check):', data);
-        setProjects(data.projects || []);
-        setIsConnected(true);
-        const selected = await getSelectedProject(data.projects || []);
-        setActiveProject(selected);
-        if (selected) {
-          localStorage.setItem('canarySelectedProject', JSON.stringify(selected));
-          localStorage.setItem('canarySelectedProjectId', selected.projectId);
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('404')) {
-          setIsConnected(false);
-        } else {
-          console.error('Error checking GCP connection:', error);
-        }
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    if (userId) {
-      checkConnection();
+  // Determine the correct step based on current state
+  const getOnboardingStep = () => {
+    if (!isConnected) {
+      return 1; // Step 1: Authentication
+    } else if (isConnected && !activeProject) {
+      return 2; // Step 2: Project Selection
+    } else if (isConnected && activeProject) {
+      return 3; // Step 3: Deployment
     }
-  }, [userId]);
+    return 1; // Default to step 1
+  };
 
   // Determine connection status
   const getConnectionStatus = () => {
@@ -128,8 +91,10 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
   };
 
   const handleConnect = async () => {
-    // Start onboarding flow at step 1 (authentication) for first-time users
-    setShowOnboarding(true, 1);
+    // Pass the correct step based on current state
+    const step = getOnboardingStep();
+    console.log('[CanaryDeployment] Starting onboarding at step:', step);
+    setShowOnboarding(true, step);
   };
 
   const handleProjectSelect = async (project: GCPProject) => {
@@ -138,12 +103,10 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
       console.log('[CanaryDeployment] Calling POST /gcp/project-selection with:', { projectId: project.projectId });
       await apiPost('/gcp/project-selection', { projectId: project.projectId });
       console.log('[CanaryDeployment] POST /gcp/project-selection completed');
-      setActiveProject(project);
-      console.log('[CanaryDeployment] Setting activeProject in state:', project);
       localStorage.setItem('canarySelectedProject', JSON.stringify(project));
       localStorage.setItem('canarySelectedProjectId', project.projectId);
-      // Get and log the updated selected project from backend
-      await getSelectedProject(projects);
+      // Trigger parent component to update activeProject
+      window.location.reload();
     } catch (error) {
       console.error('Failed to select project:', error);
     }
@@ -153,10 +116,6 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
     // TODO: Implement deployment logic
     console.log('Deploying canary proxies for project:', activeProject?.projectName);
   };
-
-  if (isInitializing) {
-    return <div className="min-h-screen flex items-center justify-center text-xl"><Loader3DCube/></div>;
-  }
 
   // Show connected state with selected project (returning user)
   if (isConnected && hasCompletedOnboarding && activeProject) {
@@ -188,7 +147,7 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
             You&apos;re connected to GCP! Let&apos;s select a project to get started.
           </p>
           <Button 
-            onClick={() => setShowOnboarding(true, 2)}
+            onClick={handleConnect} // Use the same handler which will determine correct step
             size="lg"
             className="px-6 py-3"
           >
@@ -221,11 +180,78 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
 
 export default function CanaryDeploymentPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [initialStep, setInitialStep] = useState(0);
+  const [initialStep, setInitialStep] = useState(1);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [projects, setProjects] = useState<GCPProject[]>([]);
+  const [activeProject, setActiveProject] = useState<GCPProject | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Get user ID from Supabase session
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUser();
+  }, []);
+
+  // Check if user is connected to GCP and load projects
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (!userId) return;
+      try {
+        console.log('[CanaryDeployment] Calling GET /gcp/projects (connection check)');
+        const data = await apiGet<GCPProjectsResponse>('/gcp/projects');
+        console.log('[CanaryDeployment] Response from GET /gcp/projects (connection check):', data);
+        setProjects(data.projects || []);
+        setIsConnected(true);
+        
+        // Check for selected project
+        const selected = await getSelectedProject(data.projects || []);
+        setActiveProject(selected);
+        if (selected) {
+          localStorage.setItem('canarySelectedProject', JSON.stringify(selected));
+          localStorage.setItem('canarySelectedProjectId', selected.projectId);
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('404')) {
+          setIsConnected(false);
+        } else {
+          console.error('Error checking GCP connection:', error);
+        }
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    
+    if (userId) {
+      checkConnection();
+    }
+  }, [userId]);
+
+  // Determine the correct step based on current state
+  const getOnboardingStep = () => {
+    if (!isConnected) {
+      console.log('[CanaryDeployment] Not connected, starting at step 1 (Authentication)');
+      return 1; // Step 1: Authentication
+    } else if (isConnected && !activeProject) {
+      console.log('[CanaryDeployment] Connected but no project selected, starting at step 2 (Project Selection)');
+      return 2; // Step 2: Project Selection
+    } else if (isConnected && activeProject) {
+      console.log('[CanaryDeployment] Connected and project selected, starting at step 3 (Deployment)');
+      return 3; // Step 3: Deployment
+    }
+    return 1; // Default to step 1
+  };
 
   const handleShowOnboarding = (show: boolean, step?: number) => {
+    const correctStep = step || getOnboardingStep();
+    console.log('[CanaryDeployment] handleShowOnboarding called with show:', show, 'step:', step, 'correctStep:', correctStep);
     setShowOnboarding(show);
-    setInitialStep(step || 0);
+    setInitialStep(correctStep);
   };
 
   const handleOnboardingComplete = async (deploymentUrl: string) => {
@@ -235,10 +261,17 @@ export default function CanaryDeploymentPage() {
     window.location.reload();
   };
 
+  if (isInitializing) {
+    return <div className="min-h-screen flex items-center justify-center text-xl"><Loader3DCube/></div>;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <GCPHeroInitialState 
         setShowOnboarding={handleShowOnboarding}
+        isConnected={isConnected}
+        activeProject={activeProject}
+        projects={projects}
       />
       
       {/* Onboarding Modal */}
@@ -250,4 +283,4 @@ export default function CanaryDeploymentPage() {
       />
     </div>
   );
-} 
+}
