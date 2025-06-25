@@ -4,15 +4,16 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Folder, ArrowRight, Loader2 } from 'lucide-react';
+import { GCPProject } from '../../types';
 
 interface StorageStepProps {
-  selectedProjectId?: string;
+  selectedProject: GCPProject | null;
   loading: boolean;
   onCreateBucket: () => void;
 }
 
 const StorageStep: React.FC<StorageStepProps> = ({
-  selectedProjectId,
+  selectedProject,
   loading,
   onCreateBucket
 }) => {
@@ -34,7 +35,7 @@ const StorageStep: React.FC<StorageStepProps> = ({
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between p-2 bg-muted rounded">
                 <span>Bucket:</span>
-                <code className="text-xs">canary-assets-{selectedProjectId}</code>
+                <code className="text-xs">canary-assets-{selectedProject?.projectId}</code>
               </div>
               <div className="flex items-center justify-between p-2 bg-muted rounded">
                 <span>Structure:</span>

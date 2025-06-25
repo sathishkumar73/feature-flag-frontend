@@ -3,34 +3,51 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Hash, Calendar } from 'lucide-react';
-
-interface GCPProject {
-  projectId: string;
-  projectName: string;
-  projectNumber: string;
-  lifecycleState: string;
-  createTime: string;
-}
+import { Button } from '@/components/ui/button';
+import { CheckCircle, Hash } from 'lucide-react';
+import { GCPProject } from '../../types';
 
 interface ProjectSelectionStepProps {
   projects: GCPProject[];
   selectedProject: GCPProject | null;
+  loading: boolean;
   onProjectSelect: (project: GCPProject) => void;
 }
 
 const ProjectSelectionStep: React.FC<ProjectSelectionStepProps> = ({
   projects,
   selectedProject,
+  loading,
   onProjectSelect
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin text-4xl mb-4">⏳</div>
+        <div className="text-lg text-muted-foreground">Loading your GCP projects...</div>
+      </div>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-6 py-12">
+        <div className="text-6xl">🚧</div>
+        <h2 className="text-2xl font-semibold">No projects found</h2>
+        <p className="text-gray-500 text-center max-w-md">
+          We couldn&apos;t find any GCP projects for your account.<br />
+          Please create a project in your Google Cloud Console and try again.
+        </p>
+        <Button
+          onClick={() => window.location.reload()}
+          size="lg"
+          className="px-6 py-3 mt-2"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -55,10 +72,6 @@ const ProjectSelectionStep: React.FC<ProjectSelectionStepProps> = ({
                       <Hash className="h-3 w-3" />
                       <code className="bg-muted px-1 py-0.5 rounded">{project.projectId}</code>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{formatDate(project.createTime)}</span>
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -78,7 +91,6 @@ const ProjectSelectionStep: React.FC<ProjectSelectionStepProps> = ({
           </Card>
         ))}
       </div>
-      
       {selectedProject && (
         <div className="text-center animate-in slide-in-from-bottom duration-500">
           <p className="text-sm text-muted-foreground">

@@ -4,16 +4,17 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Zap, Play, Loader2 } from 'lucide-react';
+import { GCPProject } from '../../types';
 
 interface DeployStepProps {
-  selectedProjectName?: string;
+  selectedProject: GCPProject | null;
   bucketName: string;
   loading: boolean;
   onDeploy: () => void;
 }
 
 const DeployStep: React.FC<DeployStepProps> = ({
-  selectedProjectName,
+  selectedProject,
   bucketName,
   loading,
   onDeploy
@@ -36,7 +37,7 @@ const DeployStep: React.FC<DeployStepProps> = ({
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="space-y-1">
                 <div className="text-muted-foreground">Project</div>
-                <div className="font-medium text-xs">{selectedProjectName}</div>
+                <div className="font-medium text-xs">{selectedProject?.projectName}</div>
               </div>
               <div className="space-y-1">
                 <div className="text-muted-foreground">Storage</div>

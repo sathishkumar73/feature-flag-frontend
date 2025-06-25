@@ -11,21 +11,5 @@ export { default as StorageStep } from './steps/StorageStep';
 export { default as DeployStep } from './steps/DeployStep';
 export { default as SuccessStep } from './steps/SuccessStep';
 
-// Types
-export interface GCPProject {
-  projectId: string;
-  projectName: string;
-  projectNumber: string;
-  lifecycleState: string;
-  createTime: string;
-}
-
-export interface GCPService {
-  name: string;
-  displayName: string;
-  required: boolean;
-  enabled: boolean;
-  status: string;
-  description: string;
-  estimatedTime: string;
-} 
+// Re-export types from main types file
+export type { GCPProject, GCPService } from '../types'; 

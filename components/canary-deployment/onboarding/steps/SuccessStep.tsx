@@ -4,16 +4,17 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ExternalLink } from 'lucide-react';
+import { GCPProject } from '../../types';
 
 interface SuccessStepProps {
-  selectedProjectName?: string;
+  selectedProject: GCPProject | null;
   bucketName: string;
   deploymentUrl: string;
   onComplete: () => void;
 }
 
 const SuccessStep: React.FC<SuccessStepProps> = ({
-  selectedProjectName,
+  selectedProject,
   bucketName,
   deploymentUrl,
   onComplete
@@ -32,7 +33,7 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center p-2 bg-muted rounded">
               <span className="text-muted-foreground">Project:</span>
-              <span className="font-medium text-xs">{selectedProjectName}</span>
+              <span className="font-medium text-xs">{selectedProject?.projectName}</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-muted rounded">
               <span className="text-muted-foreground">Storage:</span>
