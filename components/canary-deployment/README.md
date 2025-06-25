@@ -32,7 +32,7 @@ components/canary-deployment/
 
 #### `ConnectionCard`
 - **Purpose**: GCP connection interface with connect button and setup progress tracking
-- **Props**: `loading`, `onConnect`, `currentStep`
+- **Props**: `loading`, `onConnect`, `currentStep`, `isConnected`
 - **Usage**: Main interface when user is not connected to GCP, shows remaining setup steps
 
 #### `StatisticsDashboard`
@@ -146,7 +146,7 @@ import { BetaNotice, ConnectionCard, StatisticsDashboard } from '@/components/ca
 <BetaNotice />
 
 // Connection card
-<ConnectionCard loading={loading} onConnect={handleConnect} currentStep={0} />
+<ConnectionCard loading={loading} onConnect={handleConnect} currentStep={0} isConnected={isConnected} />
 
 // Statistics dashboard
 <StatisticsDashboard projects={projects} activeProject={activeProject} />

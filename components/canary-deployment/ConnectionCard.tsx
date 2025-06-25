@@ -9,13 +9,15 @@ interface ConnectionCardProps {
   onConnect: () => void;
   connectionStatus: 'not-connected' | 'connected' | 'disconnected';
   currentStep?: number; // Optional prop to track current step
+  isConnected?: boolean; // New prop to determine if user is already connected
 }
 
 const ConnectionCard: React.FC<ConnectionCardProps> = ({ 
   loading, 
   onConnect, 
   connectionStatus,
-  currentStep = 0 
+  currentStep = 0,
+  isConnected = false
 }) => {
   const getStatusConfig = () => {
     switch (connectionStatus) {
@@ -50,10 +52,22 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
     { id: 5, title: 'Complete Setup', description: 'Your canary deployment is ready' }
   ];
 
+  // Calculate the effective current step based on connection status
+  const getEffectiveCurrentStep = () => {
+    // If user is already connected, start from step 1 (project selection)
+    if (isConnected) {
+      return 1;
+    }
+    // Otherwise use the provided currentStep (usually 0 for first-time users)
+    return currentStep;
+  };
+
+  const effectiveCurrentStep = getEffectiveCurrentStep();
+
   const getStepIcon = (stepId: number) => {
-    if (stepId < currentStep) {
+    if (stepId < effectiveCurrentStep) {
       return <CheckCircle className="w-4 h-4 text-green-600" />;
-    } else if (stepId === currentStep) {
+    } else if (stepId === effectiveCurrentStep) {
       return <Clock className="w-4 h-4 text-blue-600" />;
     } else {
       return <Circle className="w-4 h-4 text-gray-400" />;
@@ -61,9 +75,9 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   };
 
   const getStepStatus = (stepId: number) => {
-    if (stepId < currentStep) {
+    if (stepId < effectiveCurrentStep) {
       return 'completed';
-    } else if (stepId === currentStep) {
+    } else if (stepId === effectiveCurrentStep) {
       return 'current';
     } else {
       return 'pending';
@@ -95,29 +109,46 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
               <Cloud className="w-10 h-10 text-black" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Connect</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {isConnected ? 'Already Connected' : 'Ready to Connect'}
+              </h3>
               <p className="text-gray-600 mb-4">
-                Connect your Google Cloud Platform account to deploy canary proxies in minutes
+                {isConnected 
+                  ? 'Your Google Cloud Platform account is connected. You can proceed with the next steps.'
+                  : 'Connect your Google Cloud Platform account to deploy canary proxies in minutes'
+                }
               </p>
-              <Button 
-                onClick={onConnect}
-                disabled={loading}
-                className="primary hover:bg-blue-700 text-white px-8 py-3"
-                size="lg"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <Cloud className="w-5 h-5 mr-2" />
-                    Connect with Google Cloud
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
+              {!isConnected && (
+                <Button 
+                  onClick={onConnect}
+                  disabled={loading}
+                  className="primary hover:bg-blue-700 text-white px-8 py-3"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Cloud className="w-5 h-5 mr-2" />
+                      Connect with Google Cloud
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              )}
+              {isConnected && (
+                <Button 
+                  onClick={onConnect}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
+                  size="lg"
+                >
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  Continue Setup
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -185,21 +216,21 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           <div className="mt-4 pt-4 border-t border-muted">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">
-                {currentStep === 0 
+                {effectiveCurrentStep === 0 
                   ? 'Ready to start setup' 
-                  : currentStep === onboardingSteps.length - 1
+                  : effectiveCurrentStep === onboardingSteps.length - 1
                   ? 'Setup complete!'
-                  : `${currentStep} of ${onboardingSteps.length - 1} steps completed`
+                  : `${effectiveCurrentStep} of ${onboardingSteps.length - 1} steps completed`
                 }
               </span>
               <span className="text-gray-500">
-                {Math.round((currentStep / (onboardingSteps.length - 1)) * 100)}% complete
+                {Math.round((effectiveCurrentStep / (onboardingSteps.length - 1)) * 100)}% complete
               </span>
             </div>
             <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / (onboardingSteps.length - 1)) * 100}%` }}
+                style={{ width: `${(effectiveCurrentStep / (onboardingSteps.length - 1)) * 100}%` }}
               />
             </div>
           </div>

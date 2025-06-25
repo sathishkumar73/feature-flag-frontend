@@ -192,6 +192,7 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
         onConnect={handleConnect} 
         connectionStatus={getConnectionStatus()}
         currentStep={0}
+        isConnected={isConnected}
       />
     </div>
   );
