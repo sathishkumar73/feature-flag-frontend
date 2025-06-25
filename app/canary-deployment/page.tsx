@@ -12,23 +12,23 @@ import {
   ConnectedHeader,
   DisconnectedHeader,
   ErrorMessage,
-  LoadingSpinner,
-  GCPAuthInitiateResponse,
   GCPProjectsResponse,
   GCPProject
 } from '@/components/canary-deployment';
 import CanaryOnboarding from '@/components/canary-deployment/CanaryOnboarding';
 import { Button } from '@/components/ui/button';
-import { Cloud, ArrowRight, Sparkles } from 'lucide-react';
+import Loader3DCube from '@/components/ui/loader';
+import { Cloud, ArrowRight } from 'lucide-react';
 
-const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: boolean) => void; }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: boolean, initialStep?: number) => void; }) => {
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [projects, setProjects] = useState<GCPProject[]>([]);
   const [activeProject, setActiveProject] = useState<GCPProject | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
 
   // Get user ID from Supabase session
   useEffect(() => {
@@ -41,6 +41,26 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
     getUser();
   }, []);
 
+  // Check onboarding completion status
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const onboardingComplete = localStorage.getItem('canaryOnboardingComplete');
+      const selectedProjectData = localStorage.getItem('canarySelectedProject');
+      
+      setHasCompletedOnboarding(onboardingComplete === 'true');
+      
+      // If we have a selected project in localStorage, set it
+      if (selectedProjectData) {
+        try {
+          const project = JSON.parse(selectedProjectData);
+          setActiveProject(project);
+        } catch (error) {
+          console.error('Error parsing saved project:', error);
+        }
+      }
+    }
+  }, []);
+
   // Check if user is connected to GCP
   useEffect(() => {
     const checkConnection = async () => {
@@ -50,7 +70,15 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
         setLoadingProjects(true);
         const data = await apiGet<GCPProjectsResponse>('/gcp/projects');
         setProjects(data.projects || []);
-        setActiveProject(data.activeProject || null);
+        
+        // If we have an active project from API, use it (overrides localStorage)
+        if (data.activeProject) {
+          setActiveProject(data.activeProject);
+          // Update localStorage with the API project
+          localStorage.setItem('canarySelectedProject', JSON.stringify(data.activeProject));
+          localStorage.setItem('canarySelectedProjectId', data.activeProject.projectId);
+        }
+        
         setIsConnected(true);
       } catch (error) {
         // If 404, user is not connected
@@ -69,32 +97,20 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
     }
   }, [userId]);
 
-  const handleConnect = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
-
-      const data = await apiPost<GCPAuthInitiateResponse>('/gcp/auth/initiate', {
-        userId: userId,
-        redirectUri: `${window.location.origin}/canary-deployment/callback`
-      });
-      
-      // Store state token for verification (optional)
-      localStorage.setItem('gcp_state', data.state);
-      
-      // Redirect to Google OAuth
-      window.location.href = data.authUrl;
-      
-    } catch (error) {
-      console.error('Failed to initiate GCP connection:', error);
-      setError(error instanceof Error ? error.message : 'Failed to connect to Google Cloud Platform');
-    } finally {
-      setLoading(false);
+  // Determine connection status
+  const getConnectionStatus = () => {
+    if (isConnected) {
+      return 'connected';
+    } else if (hasCompletedOnboarding === false) {
+      return 'disconnected';
+    } else {
+      return 'not-connected';
     }
+  };
+
+  const handleConnect = async () => {
+    // Start onboarding flow at step 1 (authentication) for first-time users
+    setShowOnboarding(true, 1);
   };
 
   const handleProjectSelect = async (project: GCPProject) => {
@@ -104,6 +120,10 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
         projectId: project.projectId
       });
       setActiveProject(project);
+      
+      // Persist project selection
+      localStorage.setItem('canarySelectedProject', JSON.stringify(project));
+      localStorage.setItem('canarySelectedProjectId', project.projectId);
     } catch (error) {
       console.error('Failed to select project:', error);
     }
@@ -115,10 +135,11 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
   };
 
   if (loadingProjects) {
-    return <LoadingSpinner />;
+    return <div className="min-h-screen flex items-center justify-center text-xl"><Loader3DCube/></div>;
   }
 
-  if (isConnected) {
+  // Show connected state with selected project (returning user)
+  if (isConnected && hasCompletedOnboarding && activeProject) {
     return (
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <BetaNotice />
@@ -132,94 +153,79 @@ const GCPHeroInitialState = ({ setShowOnboarding }: { setShowOnboarding: (show: 
         {activeProject && (
           <DeployAction activeProject={activeProject} onDeploy={handleDeploy} />
         )}
-        
-        {/* Onboarding Sneak Peek */}
-        <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-          <div className="text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="rounded-full bg-blue-100 p-3">
-                <Sparkles className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Experience Our New Onboarding Flow
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                See our beautiful, step-by-step setup process in action
-              </p>
-            </div>
-            <Button 
-              onClick={() => setShowOnboarding(true)}
-              variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              <Cloud className="mr-2 h-4 w-4" />
-              Try the Onboarding Demo
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+      </div>
+    );
+  }
+
+  // Show connected state but no project selected (user connected but needs to select project)
+  if (isConnected && !activeProject) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <BetaNotice />
+        <ConnectedHeader />
+        <div className="text-center space-y-4">
+          <p className="text-gray-600">
+            You&apos;re connected to GCP! Let&apos;s select a project to get started.
+          </p>
+          <Button 
+            onClick={() => setShowOnboarding(true, 2)}
+            size="lg"
+            className="px-6 py-3"
+          >
+            <Cloud className="mr-2 h-4 w-4" />
+            Select Project
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Not connected state
+  // Not connected state (first-time user)
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <BetaNotice />
       <ErrorMessage error={error || ''} />
       <DisconnectedHeader />
-      <ConnectionCard loading={loading} onConnect={handleConnect} />
-      
-      {/* Onboarding Sneak Peek */}
-      <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-blue-100 p-3">
-              <Sparkles className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Experience Our New Onboarding Flow
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              See our beautiful, step-by-step setup process in action
-            </p>
-          </div>
-          <Button 
-            onClick={() => setShowOnboarding(true)}
-            variant="outline"
-            className="border-blue-300 text-blue-700 hover:bg-blue-50"
-          >
-            <Cloud className="mr-2 h-4 w-4" />
-            Try the Onboarding Demo
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <ConnectionCard 
+        loading={loading} 
+        onConnect={handleConnect} 
+        connectionStatus={getConnectionStatus()}
+        currentStep={0}
+      />
     </div>
   );
 };
 
 export default function CanaryDeploymentPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [initialStep, setInitialStep] = useState(0);
+
+  const handleShowOnboarding = (show: boolean, step?: number) => {
+    setShowOnboarding(show);
+    setInitialStep(step || 0);
+  };
+
+  const handleOnboardingComplete = (deploymentUrl: string) => {
+    console.log('Onboarding completed:', deploymentUrl);
+    setShowOnboarding(false);
+    
+    // Refresh the page to show the updated state
+    window.location.reload();
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <GCPHeroInitialState 
-        setShowOnboarding={setShowOnboarding}
+        setShowOnboarding={handleShowOnboarding}
       />
       
       {/* Onboarding Modal */}
       <CanaryOnboarding 
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onComplete={(deploymentUrl: string) => {
-          console.log('Onboarding completed:', deploymentUrl);
-          setShowOnboarding(false);
-        }}
+        initialStep={initialStep}
+        onComplete={handleOnboardingComplete}
       />
     </div>
   );

@@ -155,14 +155,16 @@ interface CanaryOnboardingProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete?: (deploymentUrl: string) => void;
+  initialStep?: number; // Optional prop to start at a specific step
 }
 
 const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({ 
   isOpen, 
   onClose, 
-  onComplete 
+  onComplete,
+  initialStep = 0
 }) => {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [projects, setProjects] = useState<GCPProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<GCPProject | null>(null);
   const [services, setServices] = useState<GCPService[]>(MOCK_SERVICES);
@@ -177,7 +179,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setCurrentStep(0);
+      setCurrentStep(initialStep);
       setProjects([]);
       setSelectedProject(null);
       setServices(MOCK_SERVICES);
@@ -189,7 +191,46 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
       setCurrentlyEnabling(null);
       setBucketName('');
     }
-  }, [isOpen]);
+  }, [isOpen, initialStep]);
+
+  // Load projects when starting at step 2 (project selection)
+  useEffect(() => {
+    if (isOpen && initialStep === 2 && projects.length === 0) {
+      const loadProjects = async () => {
+        setLoading(true);
+        try {
+          const mockProjects = await mockApiCalls.simulateOAuthSuccess();
+          const typedProjects = mockProjects as GCPProject[];
+          setProjects(typedProjects);
+          
+          // Check if we have a previously selected project
+          const savedProjectData = localStorage.getItem('canarySelectedProject');
+          if (savedProjectData) {
+            try {
+              const savedProject = JSON.parse(savedProjectData);
+              setSelectedProject(savedProject);
+            } catch (error) {
+              console.error('Error parsing saved project:', error);
+              // Fallback to first project
+              if (typedProjects.length > 0) {
+                setSelectedProject(typedProjects[0]);
+              }
+            }
+          } else {
+            // Auto-select the first project when starting at step 2
+            if (typedProjects.length > 0) {
+              setSelectedProject(typedProjects[0]);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load projects:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadProjects();
+    }
+  }, [isOpen, initialStep, projects.length]);
 
   // Smooth progress animation
   useEffect(() => {
@@ -217,6 +258,13 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     }, 300);
   };
 
+  // Handle back button
+  const handleBack = () => {
+    if (currentStep > 0) {
+      transitionToStep(currentStep - 1);
+    }
+  };
+
   // Mock OAuth Connection
   const handleConnect = async () => {
     setLoading(true);
@@ -234,6 +282,11 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   // Step handlers with fluid transitions
   const handleProjectSelect = (project: GCPProject) => {
     setSelectedProject(project);
+    
+    // Persist project selection
+    localStorage.setItem('canarySelectedProject', JSON.stringify(project));
+    localStorage.setItem('canarySelectedProjectId', project.projectId);
+    
     // Auto-advance after selection with slight delay for better UX
     setTimeout(() => {
       transitionToStep(2);
@@ -313,6 +366,9 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   };
 
   const handleComplete = () => {
+    // Persist onboarding completion
+    localStorage.setItem('canaryOnboardingComplete', 'true');
+    
     if (onComplete && deploymentUrl) {
       onComplete(deploymentUrl);
     }
@@ -405,18 +461,30 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
             {/* Step Indicator */}
             {currentStep > 0 && (
               <div className="text-center mb-8 animate-in fade-in duration-500">
-                <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground mb-2">
-                  <span>{currentStep} of 5</span>
-                  <div className="flex space-x-1">
-                    {[1,2,3,4,5].map((step) => (
-                      <div
-                        key={step}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                          step <= currentStep ? 'bg-primary' : 'bg-muted'
-                        }`}
-                      />
-                    ))}
+                <div className="flex items-center justify-between mb-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBack}
+                    className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span>Back</span>
+                  </Button>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <span>{currentStep} of 5</span>
+                    <div className="flex space-x-1">
+                      {[1,2,3,4,5].map((step) => (
+                        <div
+                          key={step}
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            step <= currentStep ? 'bg-primary' : 'bg-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
+                  <div className="w-16"></div> {/* Spacer for centering */}
                 </div>
               </div>
             )}
@@ -854,7 +922,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => transitionToStep(Math.max(0, currentStep - 1))}
+                  onClick={handleBack}
                   className="hover:scale-105 transition-transform duration-200"
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
