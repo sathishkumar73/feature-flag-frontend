@@ -1,18 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { apiGet, apiPost } from '@/lib/apiClient';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GCPProject, GCPService } from '../types';
-import { MOCK_SERVICES, mockApiCalls } from '../mockData';
+import { gcpServicesApi } from '../utils/gcpServicesApi';
 
 interface UseCanaryOnboardingProps {
   isOpen: boolean;
   initialStep?: number;
   onComplete?: (deploymentUrl: string) => void;
+  selectedProject?: GCPProject | null;
 }
 
 export const useCanaryOnboarding = ({ 
   isOpen, 
   initialStep = 1, 
-  onComplete 
+  onComplete,
+  selectedProject: initialSelectedProject
 }: UseCanaryOnboardingProps) => {
   // Convert initialStep to internal step format (0-based)
   const getInternalStep = (externalStep: number) => {
@@ -26,8 +27,8 @@ export const useCanaryOnboarding = ({
 
   const [currentStep, setCurrentStep] = useState(getInternalStep(initialStep));
   const [projects, setProjects] = useState<GCPProject[]>([]);
-  const [selectedProject, setSelectedProject] = useState<GCPProject | null>(null);
-  const [services, setServices] = useState<GCPService[]>(MOCK_SERVICES);
+  const [selectedProject, setSelectedProject] = useState<GCPProject | null>(initialSelectedProject || null);
+  const [services, setServices] = useState<GCPService[]>([]);
   const [loading, setLoading] = useState(false);
   const [deploymentUrl, setDeploymentUrl] = useState('');
   const [animatingNext, setAnimatingNext] = useState(false);
@@ -35,8 +36,10 @@ export const useCanaryOnboarding = ({
   const [enablingServices, setEnablingServices] = useState(false);
   const [currentlyEnabling, setCurrentlyEnabling] = useState<string | null>(null);
   const [bucketName, setBucketName] = useState('');
+  const [servicesError, setServicesError] = useState<string | null>(null);
 
   const hasFetchedProjects = useRef(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Reset state when modal opens or initialStep changes
   useEffect(() => {
@@ -46,8 +49,8 @@ export const useCanaryOnboarding = ({
       
       setCurrentStep(internalStep);
       setProjects([]);
-      setSelectedProject(null);
-      setServices(MOCK_SERVICES);
+      setSelectedProject(initialSelectedProject || null);
+      setServices([]);
       setLoading(false);
       setDeploymentUrl('');
       setAnimatingNext(false);
@@ -55,168 +58,191 @@ export const useCanaryOnboarding = ({
       setEnablingServices(false);
       setCurrentlyEnabling(null);
       setBucketName('');
+      setServicesError(null);
       hasFetchedProjects.current = false;
+      
+      // Clear any existing polling
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     }
-  }, [isOpen, initialStep]);
+  }, [isOpen, initialStep, initialSelectedProject]);
 
-  // Load projects when entering project selection step or when starting at step 2
+  // Update selectedProject when prop changes
   useEffect(() => {
-    const shouldLoadProjects = isOpen && 
-      (currentStep === 1 || (currentStep >= 1 && initialStep === 2)) && 
-      projects.length === 0 && 
-      !hasFetchedProjects.current;
-
-    if (shouldLoadProjects) {
-      hasFetchedProjects.current = true;
-      const loadProjects = async () => {
-        setLoading(true);
-        try {
-          console.log('[CanaryOnboarding] Loading projects...');
-          const response = await apiGet('/gcp/projects') as { projects: GCPProject[] };
-          setProjects(response.projects || []);
-          console.log('[CanaryOnboarding] Projects loaded from backend:', response.projects);
-          
-          // Check for selected project
-          console.log('[CanaryOnboarding] Calling GET /gcp/project-selection');
-          const selection = await apiGet<{ projectId: string | null }>('/gcp/project-selection');
-          console.log('[CanaryOnboarding] Response from GET /gcp/project-selection:', selection);
-          
-          if (selection.projectId) {
-            const found = response.projects.find(p => p.projectId === selection.projectId) || null;
-            setSelectedProject(found);
-            if (found) {
-              console.log('[CanaryOnboarding] Active project found and set:', found);
-              // If we're starting at step 2 (project selection) but already have a project selected,
-              // auto-advance to next step after a short delay
-              if (initialStep === 2) {
-                setTimeout(() => {
-                  transitionToStep(2); // Move to services step
-                }, 800);
-              } else if (currentStep === 1) {
-                // Normal flow from step 1
-                setTimeout(() => {
-                  transitionToStep(2);
-                }, 800);
-              }
-            }
-          } else {
-            console.log('[CanaryOnboarding] No active project found in response');
-          }
-        } catch (error) {
-          console.error('Failed to load projects:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      loadProjects();
+    if (initialSelectedProject !== undefined) {
+      setSelectedProject(initialSelectedProject);
     }
-  }, [isOpen, currentStep, projects.length, initialStep]);
+  }, [initialSelectedProject]);
 
-  // Smooth progress animation
+  // Cleanup polling on unmount
   useEffect(() => {
-    const targetProgress = (currentStep / 5) * 100;
-    const progressTimer = setInterval(() => {
-      setProgressPercent(prev => {
-        const diff = targetProgress - prev;
-        if (Math.abs(diff) < 1) {
-          clearInterval(progressTimer);
-          return targetProgress;
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const loadServices = useCallback(async () => {
+    try {
+      setLoading(true);
+      setServicesError(null);
+      console.log('[CanaryOnboarding] Loading GCP services...');
+      
+      if (!selectedProject?.projectId) {
+        console.error('[CanaryOnboarding] No project selected');
+        setServicesError('No project selected');
+        return;
+      }
+      
+      const response = await gcpServicesApi.getServices(selectedProject.projectId);
+      setServices(response.services);
+      
+      console.log('[CanaryOnboarding] Services loaded:', response);
+      
+      // Auto-advance if all services already enabled
+      if (response.allEnabled) {
+        console.log('[CanaryOnboarding] All services already enabled, auto-advancing...');
+        setTimeout(() => transitionToStep(3), 1000);
+      }
+    } catch (error) {
+      console.error('[CanaryOnboarding] Failed to load GCP services:', error);
+      setServicesError(error instanceof Error ? error.message : 'Failed to load services');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedProject]);
+
+  // Load services when step 2 (services step) becomes active
+  useEffect(() => {
+    if (currentStep === 2 && selectedProject) {
+      loadServices();
+    }
+  }, [currentStep, selectedProject, loadServices]);
+
+  // Poll for services completion
+  const pollServicesCompletion = async () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        console.log('[CanaryOnboarding] Polling for services completion...');
+        
+        if (!selectedProject?.projectId) {
+          console.error('[CanaryOnboarding] No project selected during polling');
+          clearInterval(pollingIntervalRef.current!);
+          pollingIntervalRef.current = null;
+          return;
         }
-        return prev + diff * 0.1;
-      });
-    }, 16);
+        
+        const response = await gcpServicesApi.getServices(selectedProject.projectId);
+        setServices(response.services);
+        
+        if (response.allEnabled) {
+          console.log('[CanaryOnboarding] All services enabled, stopping polling');
+          clearInterval(pollingIntervalRef.current!);
+          pollingIntervalRef.current = null;
+          setCurrentlyEnabling(null);
+          
+          // Auto-advance to next step
+          setTimeout(() => transitionToStep(3), 1000);
+        }
+      } catch (error) {
+        console.error('[CanaryOnboarding] Polling failed:', error);
+        clearInterval(pollingIntervalRef.current!);
+        pollingIntervalRef.current = null;
+        setServicesError(error instanceof Error ? error.message : 'Failed to check services status');
+      }
+    }, 2000); // Poll every 2 seconds
+  };
 
-    return () => clearInterval(progressTimer);
-  }, [currentStep]);
-
-  // Smooth step transition
-  const transitionToStep = (nextStep: number) => {
-    console.log('[CanaryOnboarding] Transitioning to step:', nextStep);
+  const transitionToStep = (step: number) => {
     setAnimatingNext(true);
     setTimeout(() => {
-      setCurrentStep(nextStep);
+      setCurrentStep(step);
+      setProgressPercent((step / 5) * 100);
       setAnimatingNext(false);
     }, 300);
   };
 
-  // Step handlers
   const handleConnect = async () => {
     setLoading(true);
     try {
-      console.log('[CanaryOnboarding] Simulating OAuth connection...');
-      const mockProjects = await mockApiCalls.simulateOAuthSuccess();
+      console.log('[CanaryOnboarding] Initiating GCP connection...');
+      // This would be replaced with real OAuth flow
+      // For now, simulate the connection
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      // Mock projects for now - replace with real API call
+      const mockProjects: GCPProject[] = [
+        {
+          projectId: 'gradual-rollout-demo',
+          projectName: 'GradualRollout Demo Project',
+          projectNumber: '123456789012',
+          lifecycleState: 'ACTIVE',
+          createTime: '2024-01-15T10:30:00Z'
+        }
+      ];
+      
       setProjects(mockProjects);
+      hasFetchedProjects.current = true;
       transitionToStep(1);
     } catch (error) {
-      console.error('Mock OAuth failed:', error);
+      console.error('[CanaryOnboarding] Connection failed:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleProjectSelect = async (project: GCPProject) => {
-    console.log('[CanaryOnboarding] User selected project:', project.projectName, '(', project.projectId, ')');
+  const handleProjectSelect = (project: GCPProject) => {
     setSelectedProject(project);
-    
-    // Make backend call to set selected project
-    try {
-      console.log('[CanaryOnboarding] Calling POST /gcp/project-selection with:', { projectId: project.projectId });
-      await apiPost('/gcp/project-selection', { projectId: project.projectId });
-      console.log('[CanaryOnboarding] Successfully set selected project in backend:', project.projectName);
-    } catch (error) {
-      console.error('[CanaryOnboarding] Failed to set selected project in backend:', error);
-    }
-    
-    // Persist project selection
-    localStorage.setItem('canarySelectedProject', JSON.stringify(project));
-    localStorage.setItem('canarySelectedProjectId', project.projectId);
-    
-    // Auto-advance after selection with slight delay for better UX
-    setTimeout(() => {
-      transitionToStep(2);
-    }, 800);
+    transitionToStep(2);
   };
 
   const handleEnableServices = async () => {
     setEnablingServices(true);
+    setServicesError(null);
     
     try {
-      const servicesToEnable = services.filter(s => !s.enabled);
+      console.log('[CanaryOnboarding] Enabling all GCP services...');
       
-      for (const service of servicesToEnable) {
-        // Mark as currently enabling
-        setCurrentlyEnabling(service.name);
-        setServices(prev => prev.map(s => 
-          s.name === service.name 
-            ? { ...s, status: 'enabling' }
-            : s
-        ));
-
-        // Wait for the service to be enabled
-        await mockApiCalls.enableService(service.name, service.estimatedTime);
-        
-        // Mark as enabled
-        setServices(prev => prev.map(s => 
-          s.name === service.name 
-            ? { ...s, enabled: true, status: 'enabled' }
-            : s
-        ));
-
-        // Small delay between services for better UX
-        if (service !== servicesToEnable[servicesToEnable.length - 1]) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
+      if (!selectedProject?.projectId) {
+        console.error('[CanaryOnboarding] No project selected');
+        setServicesError('No project selected');
+        return;
       }
       
-      setCurrentlyEnabling(null);
+      // Call the batch enable endpoint
+      const response = await gcpServicesApi.enableAllServices(selectedProject.projectId);
       
-      // Auto-advance after all services are enabled
-      setTimeout(() => {
-        transitionToStep(3);
-      }, 1000);
-      
+      if (response.success) {
+        console.log('[CanaryOnboarding] Services enablement initiated:', response);
+        
+        // Update UI to show enabling status for all services
+        setServices(prev => prev.map(service => ({
+          ...service,
+          status: 'enabling' as const
+        })));
+        
+        // Start polling for completion
+        await pollServicesCompletion();
+      } else {
+        throw new Error(response.message || 'Failed to enable services');
+      }
     } catch (error) {
-      console.error('Mock enable services failed:', error);
+      console.error('[CanaryOnboarding] Failed to enable services:', error);
+      setServicesError(error instanceof Error ? error.message : 'Failed to enable services');
+      
+      // Update services to show failed status
+      setServices(prev => prev.map(service => ({
+        ...service,
+        status: 'failed' as const,
+        error: error instanceof Error ? error.message : 'Enablement failed'
+      })));
     } finally {
       setEnablingServices(false);
     }
@@ -226,11 +252,12 @@ export const useCanaryOnboarding = ({
     setLoading(true);
     try {
       console.log('[CanaryOnboarding] Creating storage bucket...');
-      const result = await mockApiCalls.createBucket();
-      setBucketName(result.bucketName);
+      // This would be replaced with real bucket creation API
+      await new Promise(resolve => setTimeout(resolve, 1800));
+      setBucketName('canary-assets-demo');
       transitionToStep(4);
     } catch (error) {
-      console.error('Mock bucket creation failed:', error);
+      console.error('[CanaryOnboarding] Bucket creation failed:', error);
     } finally {
       setLoading(false);
     }
@@ -240,11 +267,12 @@ export const useCanaryOnboarding = ({
     setLoading(true);
     try {
       console.log('[CanaryOnboarding] Deploying canary proxy...');
-      const result = await mockApiCalls.deployProxy();
-      setDeploymentUrl(result.serviceUrl);
+      // This would be replaced with real deployment API
+      await new Promise(resolve => setTimeout(resolve, 3500));
+      setDeploymentUrl(`https://canary-proxy-${Math.random().toString(36).substring(7)}-uc.a.run.app`);
       transitionToStep(5);
     } catch (error) {
-      console.error('Mock deployment failed:', error);
+      console.error('[CanaryOnboarding] Deployment failed:', error);
     } finally {
       setLoading(false);
     }
@@ -279,6 +307,7 @@ export const useCanaryOnboarding = ({
     enablingServices,
     currentlyEnabling,
     bucketName,
+    servicesError,
     
     // Handlers
     handleConnect,
@@ -288,6 +317,7 @@ export const useCanaryOnboarding = ({
     handleDeployProxy,
     handleComplete,
     handleBack,
-    transitionToStep
+    transitionToStep,
+    loadServices
   };
 }; 

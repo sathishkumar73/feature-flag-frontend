@@ -12,9 +12,10 @@ export interface GCPService {
   displayName: string;
   required: boolean;
   enabled: boolean;
-  status: string;
+  status: 'enabled' | 'enabling' | 'pending' | 'failed';
   description: string;
-  estimatedTime: number;
+  estimatedTime?: number; // milliseconds
+  error?: string; // If enablement failed
 }
 
 export interface GCPAuthInitiateResponse {
@@ -41,6 +42,7 @@ export interface CanaryOnboardingProps {
   onClose: () => void;
   onComplete?: (deploymentUrl: string) => void;
   initialStep?: number; // Step to start at (1=auth, 2=project, 3=deployment)
+  selectedProject?: GCPProject | null;
 }
 
 export interface StepConfig {
@@ -55,4 +57,36 @@ export interface MockApiCalls {
   enableService: (serviceName: string, estimatedTime: number) => Promise<{ success: boolean; serviceName: string }>;
   createBucket: () => Promise<{ bucketName: string; region: string }>;
   deployProxy: () => Promise<{ serviceUrl: string; region: string }>;
+}
+
+// New GCP Services API types
+export interface GCPServicesResponse {
+  services: GCPService[];
+  allEnabled: boolean;
+  enabledCount: number;
+  totalRequired: number;
+}
+
+export interface EnableAllServicesResponse {
+  success: boolean;
+  results: Array<{
+    serviceName: string;
+    success: boolean;
+    alreadyEnabled: boolean;
+    estimatedTime: number;
+    error?: string;
+  }>;
+  message: string;
+}
+
+export interface EnableServiceResponse {
+  success: boolean;
+  serviceName: string;
+  alreadyEnabled: boolean;
+  estimatedTime: number;
+  error?: string;
+}
+
+export interface ServiceStatusResponse {
+  service: GCPService;
 } 

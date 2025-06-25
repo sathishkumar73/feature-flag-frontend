@@ -279,6 +279,7 @@ export default function CanaryDeploymentPage() {
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
         initialStep={initialStep}
+        selectedProject={activeProject}
         onComplete={handleOnboardingComplete}
       />
     </div>

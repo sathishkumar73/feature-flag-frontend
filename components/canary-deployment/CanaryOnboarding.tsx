@@ -21,13 +21,14 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   isOpen, 
   onClose, 
   onComplete,
-  initialStep = 1
+  initialStep = 1,
+  selectedProject
 }) => {
   const {
     // State
     currentStep,
     projects,
-    selectedProject,
+    selectedProject: hookSelectedProject,
     services,
     loading,
     deploymentUrl,
@@ -36,6 +37,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     enablingServices,
     currentlyEnabling,
     bucketName,
+    servicesError,
     
     // Handlers
     handleConnect,
@@ -45,7 +47,8 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     handleDeployProxy,
     handleComplete,
     handleBack,
-  } = useCanaryOnboarding({ isOpen, initialStep, onComplete });
+    loadServices,
+  } = useCanaryOnboarding({ isOpen, initialStep, onComplete, selectedProject });
 
   const stepConfig = getStepConfig(currentStep, projects.length);
 
@@ -150,7 +153,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                 {currentStep === 1 && (
                   <ProjectSelectionStep 
                     projects={projects}
-                    selectedProject={selectedProject}
+                    selectedProject={hookSelectedProject || null}
                     loading={loading}
                     onProjectSelect={handleProjectSelect}
                   />
@@ -160,17 +163,20 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                 {currentStep === 2 && (
                   <ServicesStep 
                     services={services}
-                    selectedProject={selectedProject}
+                    selectedProject={hookSelectedProject ? { projectName: hookSelectedProject.projectName } : null}
                     enablingServices={enablingServices}
                     currentlyEnabling={currentlyEnabling}
+                    servicesError={servicesError}
+                    loading={loading}
                     onEnableServices={handleEnableServices}
+                    onRetry={loadServices}
                   />
                 )}
 
                 {/* Step 3: Create Bucket */}
                 {currentStep === 3 && (
                   <StorageStep 
-                    selectedProject={selectedProject}
+                    selectedProject={hookSelectedProject || null}
                     loading={loading}
                     onCreateBucket={handleCreateBucket}
                   />
@@ -179,7 +185,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                 {/* Step 4: Deploy Proxy */}
                 {currentStep === 4 && (
                   <DeployStep 
-                    selectedProject={selectedProject}
+                    selectedProject={hookSelectedProject || null}
                     bucketName={bucketName}
                     loading={loading}
                     onDeploy={handleDeployProxy}
@@ -189,7 +195,7 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                 {/* Step 5: Success */}
                 {currentStep === 5 && (
                   <SuccessStep 
-                    selectedProject={selectedProject}
+                    selectedProject={hookSelectedProject || null}
                     bucketName={bucketName}
                     deploymentUrl={deploymentUrl}
                     onComplete={handleComplete}

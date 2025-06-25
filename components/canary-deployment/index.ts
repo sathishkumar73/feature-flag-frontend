@@ -22,6 +22,7 @@ export { useCanaryOnboarding } from './hooks/useCanaryOnboarding';
 
 // Utils
 export { getStepConfig } from './utils/stepConfig';
+export { gcpServicesApi } from './utils/gcpServicesApi';
 
 // Mock data
 export { MOCK_PROJECTS, MOCK_SERVICES, mockApiCalls } from './mockData'; 
