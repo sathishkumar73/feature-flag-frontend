@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import {
   X,
   ChevronLeft
 } from 'lucide-react';
+import { apiGet } from '@/lib/apiClient';
 
 // =============================================================================
 // MOCK DATA - Replace with real API calls when onboarding UI is complete
@@ -176,6 +177,8 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
   const [currentlyEnabling, setCurrentlyEnabling] = useState<string | null>(null);
   const [bucketName, setBucketName] = useState('');
 
+  const hasFetchedProjects = useRef(false);
+
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -193,34 +196,18 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     }
   }, [isOpen, initialStep]);
 
-  // Load projects when starting at step 2 (project selection)
+  // Load projects when entering the project selection step (only once per modal open)
   useEffect(() => {
-    if (isOpen && initialStep === 2 && projects.length === 0) {
+    if (isOpen && currentStep === 1 && projects.length === 0 && !hasFetchedProjects.current) {
+      hasFetchedProjects.current = true;
       const loadProjects = async () => {
         setLoading(true);
         try {
-          const mockProjects = await mockApiCalls.simulateOAuthSuccess();
-          const typedProjects = mockProjects as GCPProject[];
-          setProjects(typedProjects);
-          
-          // Check if we have a previously selected project
-          const savedProjectData = localStorage.getItem('canarySelectedProject');
-          if (savedProjectData) {
-            try {
-              const savedProject = JSON.parse(savedProjectData);
-              setSelectedProject(savedProject);
-            } catch (error) {
-              console.error('Error parsing saved project:', error);
-              // Fallback to first project
-              if (typedProjects.length > 0) {
-                setSelectedProject(typedProjects[0]);
-              }
-            }
-          } else {
-            // Auto-select the first project when starting at step 2
-            if (typedProjects.length > 0) {
-              setSelectedProject(typedProjects[0]);
-            }
+          const response = await apiGet('/gcp/projects') as { projects: GCPProject[]; activeProject?: GCPProject };
+          setProjects(response.projects || []);
+          console.log('[Onboarding] Projects loaded from backend:', response.projects);
+          if (response.activeProject) {
+            setSelectedProject(response.activeProject);
           }
         } catch (error) {
           console.error('Failed to load projects:', error);
@@ -230,7 +217,17 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
       };
       loadProjects();
     }
-  }, [isOpen, initialStep, projects.length]);
+    if (!isOpen) {
+      hasFetchedProjects.current = false; // reset when modal closes
+    }
+  }, [isOpen, currentStep, projects.length]);
+
+  // Log projects only when they change
+  useEffect(() => {
+    if (currentStep === 1) {
+      console.log('[Onboarding] Rendering project selection step, projects:', projects);
+    }
+  }, [projects, currentStep]);
 
   // Smooth progress animation
   useEffect(() => {
@@ -566,60 +563,91 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
 
                 {/* Step 1: Project Selection */}
                 {currentStep === 1 && (
-                  <div className="space-y-4">
-                    <div className="grid gap-3">
-                      {projects.map((project, index) => (
-                        <Card
-                          key={project.projectId}
-                          className={`cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md animate-in slide-in-from-left duration-500 ${
-                            selectedProject?.projectId === project.projectId
-                              ? 'ring-2 ring-primary bg-accent scale-[1.01] shadow-md'
-                              : ''
-                          }`}
-                          style={{ animationDelay: `${index * 100}ms` }}
-                          onClick={() => handleProjectSelect(project)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="space-y-1">
-                                <h3 className="font-medium">{project.projectName}</h3>
-                                <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                                  <div className="flex items-center space-x-1">
-                                    <Hash className="h-3 w-3" />
-                                    <code className="bg-muted px-1 py-0.5 rounded">{project.projectId}</code>
-                                  </div>
-                                  <div className="flex items-center space-x-1">
-                                    <Calendar className="h-3 w-3" />
-                                    <span>{formatDate(project.createTime)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="secondary" className="text-xs">{project.lifecycleState}</Badge>
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                                  selectedProject?.projectId === project.projectId
-                                    ? 'border-primary bg-primary'
-                                    : 'border-muted-foreground'
-                                }`}>
-                                  {selectedProject?.projectId === project.projectId && (
-                                    <CheckCircle className="h-3 w-3 text-primary-foreground animate-in zoom-in duration-200" />
-                                  )}
-                                </div>
-                              </div>
+                  (() => {
+                    if (loading) {
+                      return (
+                        <div className="flex flex-col items-center justify-center py-12">
+                          <div className="animate-spin text-4xl mb-4">⏳</div>
+                          <div className="text-lg text-muted-foreground">Loading your GCP projects...</div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-4">
+                        {projects.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center space-y-6 py-12">
+                            <div className="text-6xl">🚧</div>
+                            <h2 className="text-2xl font-semibold">No projects found</h2>
+                            <p className="text-gray-500 text-center max-w-md">
+                              We couldn&apos;t find any GCP projects for your account.<br />
+                              Please create a project in your Google Cloud Console and try again.
+                            </p>
+                            <Button
+                              onClick={() => window.location.reload()}
+                              size="lg"
+                              className="px-6 py-3 mt-2"
+                            >
+                              Retry
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="grid gap-3">
+                              {projects.map((project, index) => (
+                                <Card
+                                  key={project.projectId}
+                                  className={`cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md animate-in slide-in-from-left duration-500 ${
+                                    selectedProject?.projectId === project.projectId
+                                      ? 'ring-2 ring-primary bg-accent scale-[1.01] shadow-md'
+                                      : ''
+                                  }`}
+                                  style={{ animationDelay: `${index * 100}ms` }}
+                                  onClick={() => handleProjectSelect(project)}
+                                >
+                                  <CardContent className="p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="space-y-1">
+                                        <h3 className="font-medium">{project.projectName}</h3>
+                                        <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                                          <div className="flex items-center space-x-1">
+                                            <Hash className="h-3 w-3" />
+                                            <code className="bg-muted px-1 py-0.5 rounded">{project.projectId}</code>
+                                          </div>
+                                          <div className="flex items-center space-x-1">
+                                            <Calendar className="h-3 w-3" />
+                                            <span>{formatDate(project.createTime)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <Badge variant="secondary" className="text-xs">{project.lifecycleState}</Badge>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                                          selectedProject?.projectId === project.projectId
+                                            ? 'border-primary bg-primary'
+                                            : 'border-muted-foreground'
+                                        }`}>
+                                          {selectedProject?.projectId === project.projectId && (
+                                            <CheckCircle className="h-3 w-3 text-primary-foreground animate-in zoom-in duration-200" />
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    
-                    {selectedProject && (
-                      <div className="text-center animate-in slide-in-from-bottom duration-500">
-                        <p className="text-sm text-muted-foreground">
-                          Great choice! Setting up <strong>{selectedProject.projectName}</strong>
-                        </p>
+                            {selectedProject && (
+                              <div className="text-center animate-in slide-in-from-bottom duration-500">
+                                <p className="text-sm text-muted-foreground">
+                                  Great choice! Setting up <strong>{selectedProject.projectName}</strong>
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()
                 )}
 
                 {/* Step 2: Enable Services - Enhanced with one-by-one enabling */}
