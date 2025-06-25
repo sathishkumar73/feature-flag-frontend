@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   ArrowRight,
   CheckCircle,
-  Calendar,
   Hash,
   Sparkles,
   Shield,
@@ -372,14 +371,6 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
     onClose();
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const getStepConfig = () => {
     const configs = [
       {
@@ -469,13 +460,13 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                     <span>Back</span>
                   </Button>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <span>{currentStep} of 5</span>
+                    <span>{currentStep + 1} of 5</span>
                     <div className="flex space-x-1">
-                      {[1,2,3,4,5].map((step) => (
+                      {[0,1,2,3,4].map((step) => (
                         <div
                           key={step}
                           className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                            step <= currentStep ? 'bg-primary' : 'bg-muted'
+                            step === currentStep ? 'bg-primary' : 'bg-muted'
                           }`}
                         />
                       ))}
@@ -612,10 +603,6 @@ const CanaryOnboarding: React.FC<CanaryOnboardingProps> = ({
                                           <div className="flex items-center space-x-1">
                                             <Hash className="h-3 w-3" />
                                             <code className="bg-muted px-1 py-0.5 rounded">{project.projectId}</code>
-                                          </div>
-                                          <div className="flex items-center space-x-1">
-                                            <Calendar className="h-3 w-3" />
-                                            <span>{formatDate(project.createTime)}</span>
                                           </div>
                                         </div>
                                       </div>
